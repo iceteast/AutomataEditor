@@ -1,0 +1,98 @@
+/* .text-updater-node {
+    border: 1px solid #000;
+    height: 50px;
+    padding: 5px;
+    border-radius: 5px;
+    background: white;
+}
+
+.text-updater-node .selected {
+    border: 2px solid #000;
+}
+
+.text-updater-node label {
+    display: block;
+    color: #777;
+    font-size: 12px;
+} */
+
+
+.react-flow__node-textUpdater {
+    --primary-color: black;
+    background-color: white;
+}
+
+
+[class^="react-flow__node-textUpdater"],
+[class*="react-flow__node-textUpdater"] {
+    --outer-radius: 2.5rem;
+    --inner-radius: 0.75rem;
+    position: relative;
+    font-size: 12px;
+    width: var(--outer-radius);
+    height: var(--outer-radius);
+    border-radius: 5px;
+    border: 1px solid var(--primary-color);
+}
+
+[class^="react-flow__node-textUpdater"].selected,
+[class^="react-flow__node-textUpdater"].selected:hover,
+[class*="react-flow__node-textUpdater"].selected,
+[class*="react-flow__node-textUpdater"].selected:hover {
+    box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+
+/* [class^="react-flow__node-terminator"] .react-flow__handle,
+[class*="react-flow__node-terminator"] .react-flow__handle {
+  border-radius: 0.5rem;
+  background: var(--primary-color);
+}
+[class^="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-top,
+[class^="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-bottom,
+[class*="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-top,
+[class*="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-bottom {
+  width: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+[class^="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-top,
+[class*="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-top {
+  top: -0.25rem;
+}
+[class^="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-bottom,
+[class*="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-bottom {
+  bottom: -0.25rem;
+}
+[class^="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-left,
+[class^="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-right,
+[class*="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-left,
+[class*="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-right {
+  height: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+[class^="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-left,
+[class*="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-left {
+  left: -0.25rem;
+}
+[class^="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-right,
+[class*="react-flow__node-terminator"]
+  .react-flow__handle.react-flow__handle-right {
+  right: -0.25rem;
+} */
