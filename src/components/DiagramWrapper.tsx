@@ -22,7 +22,7 @@ interface DiagramProps {
 
 var KAPPA = 4 * ((Math.sqrt(2) - 1) / 3);
 // go.Shape.setFigureParameter("RoundedRectangle", 0, new FigureParameter("CornerRounding", 5));
-go.Shape.defineFigureGenerator("RoundedRectangle2", function (shape, w, h) {  // predefined in 2.0
+go.Shape.defineFigureGenerator("StartNode", function (shape, w, h) {  // predefined in 2.0
   var param1 = shape ? shape.parameter1 : NaN;
   if (isNaN(param1) || param1 < 0) param1 = 5;  // default corner
   param1 = Math.min(param1, w / 3);
@@ -38,7 +38,12 @@ go.Shape.defineFigureGenerator("RoundedRectangle2", function (shape, w, h) {  //
       .add(new go.PathSegment(go.PathSegment.Line, param1, h))
       .add(new go.PathSegment(go.PathSegment.Bezier, 0, h - param1, cpOffset, h, 0, h - cpOffset))
       .add(new go.PathSegment(go.PathSegment.Line, 0, param1))
-      .add(new go.PathSegment(go.PathSegment.Bezier, param1, 0, 0, cpOffset, cpOffset, 0).close()));
+      .add(new go.PathSegment(go.PathSegment.Bezier, param1, 0, 0, cpOffset, cpOffset, 0).close()))
+    .add(new go.PathFigure(0, h / 2, true)
+      .add(new go.PathSegment(go.PathSegment.Line, -w / 3, 0))
+      .add(new go.PathSegment(go.PathSegment.Line, -w / 3, h))
+      .add(new go.PathSegment(go.PathSegment.Line, 0, h / 2))
+    );
   if (cpOffset > 1) {
     geo.spot1 = new go.Spot(0, 0, cpOffset, cpOffset);
     geo.spot2 = new go.Spot(1, 1, -cpOffset, -cpOffset);
@@ -175,9 +180,10 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
               // console.log("Toggle final");
               // console.log(obj.part.data);
             }
-          }
+          },
         },
         new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
+        new go.Binding('deletable').makeTwoWay(),
         // $(go.Shape, 'RoundedRectangle',
         //   {
         //     name: 'SHAPE2', fill: 'white', strokeWidth: 2,
@@ -188,9 +194,10 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
         // ),
         // new go.Binding('fill', 'color')),
 
-        $(go.Shape, 'RoundedRectangle',
+        $(go.Shape,
           // $(go.Shape, 'Border',
           {
+            figure: 'RoundedRectangle',
             name: 'SHAPE', fill: 'white', strokeWidth: 2,
             // stroke: 'white',
             // stroke: $(go.Brush, 'Pattern', { pattern: $(go.Shape, {geometryString:"M0 0 L1 0 M0 3 L1 3", fill:"transparent", color:"black", strokeWidth:2 })}),
@@ -204,6 +211,7 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
           },
           // Shape.fill is bound to Node.data.color
           new go.Binding('fill', 'color'),
+          new go.Binding('figure').makeTwoWay(),
           new go.Binding('pathPattern', 'final', (final: boolean) => final ? doubleStrokePattern : null)),
         // new go.Binding('stro', 'color')),
         $(go.TextBlock,
