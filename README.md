@@ -7,20 +7,22 @@
 ### Automata Editor
 
 The editor should be intuitive and easy to use.
-- [ ] Add a new node
-- [ ] named nodes
-- [ ] have a unique start node
-- [ ] multiple edges between nodes (or separated labels)
-- [ ] named labels
-- [ ] mark nodes as final (double border)
-- [ ] select nodes, edges
-- [ ] move nodes
-- [ ] add edges
-- [ ] delete nodes, edges
+- [x] Add a new node
+- [x] named nodes
+- [x] have a unique start node
+- [x] multiple edges between nodes (or separated labels)
+- [x] named labels
+- [x] custom nodes
+- [x] mark nodes as final (double border)
+  - [ ] good looking double outline
+- [x] select nodes, edges
+- [x] move nodes
+- [x] add edges
+- [x] delete nodes, edges
 - [ ] save/load automata
 - [ ] extract simple datastructure
-- [ ] zoom
-- [ ] pan
+- [x] zoom
+- [x] pan
 
 ### Export Formats
 
