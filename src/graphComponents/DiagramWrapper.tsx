@@ -5,6 +5,7 @@
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
 import * as React from 'react';
+import { nodeColor } from '../Const';
 
 // import { GuidedDraggingTool } from '../GuidedDraggingTool';
 
@@ -20,16 +21,110 @@ interface DiagramProps {
 }
 
 
+var GeneratorEllipseSpot1 = new go.Spot(0.156, 0.156);
+var GeneratorEllipseSpot2 = new go.Spot(0.844, 0.844);
 var KAPPA = 4 * ((Math.sqrt(2) - 1) / 3);
 // go.Shape.setFigureParameter("RoundedRectangle", 0, new FigureParameter("CornerRounding", 5));
-go.Shape.defineFigureGenerator("StartNode", function (shape, w, h) {  // predefined in 2.0
+
+go.Shape.defineFigureGenerator("HalfEllipse", function (shape, w, h) {
+  return new go.Geometry()
+    .add(new go.PathFigure(0, 0, true)
+      .add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 0, 0, KAPPA, (.5 - KAPPA * 0.5) * w, 0))
+      .add(new go.PathSegment(go.PathSegment.Bezier, 1.0 * w, 0, (.5 + KAPPA * 0.5) * w, 0, 1.0 * w, KAPPA))
+      .add(new go.PathSegment(go.PathSegment.Line, w, h))
+    )
+    .setSpots(0, 0.156, 0.844, 0.844);
+});
+
+go.Shape.defineFigureGenerator("Cylinder1", function (shape, w, h) {
+  var param1 = shape ? shape.parameter1 : NaN;  // half the height of the ellipse
+  if (isNaN(param1)) param1 = 5; // default value
+  param1 = Math.min(param1, h / 3);
+
+  var geo = new go.Geometry();
+  var cpxOffset = KAPPA * .5;
+  var fig = new go.PathFigure(0, param1, true);
+  geo.add(fig);
+  // The base (top)
+  fig.add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 0, 0, KAPPA * param1,
+    (.5 - cpxOffset) * w, 0));
+  fig.add(new go.PathSegment(go.PathSegment.Bezier, 1.0 * w, param1, (.5 + cpxOffset) * w, 0,
+    1.0 * w, KAPPA * param1));
+  fig.add(new go.PathSegment(go.PathSegment.Line, w, h - param1));
+  // Bottom curve
+  fig.add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 1.0 * h, 1.0 * w, h - KAPPA * param1,
+    (.5 + cpxOffset) * w, 1.0 * h));
+  fig.add(new go.PathSegment(go.PathSegment.Bezier, 0, h - param1, (.5 - cpxOffset) * w, 1.0 * h,
+    0, h - KAPPA * param1));
+  fig.add(new go.PathSegment(go.PathSegment.Line, 0, param1));
+
+  var fig2 = new go.PathFigure(w, param1, false);
+  geo.add(fig2);
+  fig2.add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 2 * param1, 1.0 * w, 2 * param1 - KAPPA * param1,
+    (.5 + cpxOffset) * w, 2 * param1));
+  fig2.add(new go.PathSegment(go.PathSegment.Bezier, 0, param1, (.5 - cpxOffset) * w, 2 * param1,
+    0, 2 * param1 - KAPPA * param1));
+
+  geo.spot1 = new go.Spot(0, 0, 0, 2 * param1);
+  geo.spot2 = new go.Spot(1, 1);
+  return geo;
+});
+
+
+
+go.Shape.defineFigureGenerator("StartNodeCircle", function (shape, w, h) {
+  var geo = new go.Geometry(go.Geometry.Ellipse)
+  // var geo = new go.Geometry();
+  //   .add(new go.PathFigure(p.x, p.y)
+  //        .add(new go.PathSegment(go.PathSegment.Arc, -sweep/2, sweep, 0, 0, radius, radius+layerThickness))
+  //        .add(new go.PathSegment(go.PathSegment.Line, q.x, q.y))
+  //        .add(new go.PathSegment(go.PathSegment.Arc, sweep/2, -sweep, 0, 0, radius, radius).close()));
+  // var geo1 = new go.Geometry();
+  // var geo = new go.Geometry()
+  // .add(new go.PathFigure(w / 2, 0, true)
+  //   // .add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 0, 0, h, (.5 - KAPPA * 0.5) * w, 0))
+  //   // .add(new go.PathSegment(go.PathSegment.Bezier, 1.0 * w, 0, (.5 + KAPPA * 0.5) * w, 0, 1.0 * w, KAPPA))
+  //   // .add(new go.PathSegment(go.PathSegment.Line, w, h))
+  //   // .add(new go.PathSegment(go.PathSegment.Bezier, w / 2, h / 2, KAPPA * w / 4, 0, w / 2, (.5 - KAPPA / 2) * h))
+  //   // .add(new go.PathSegment(go.PathSegment.Bezier, 0, h, w, (.5 + KAPPA / 2) * h, KAPPA * w, h).close()))
+  // )
+  // .setSpots(0, 0.156, 0.844, 0.844);
+
+  // .add(new go.PathFigure(0, h / 2, true)
+  //   .add(new go.PathSegment(go.PathSegment.Line, -w / 3, 0))
+  //   .add(new go.PathSegment(go.PathSegment.Line, -w / 3, h))
+  //   .add(new go.PathSegment(go.PathSegment.Line, 0, h / 2))
+  // );
+  geo.startX = 0;
+  geo.startY = 0;
+  geo.endX = w;
+  geo.endY = h;
+  geo.spot1 = GeneratorEllipseSpot1;
+  geo.spot2 = GeneratorEllipseSpot2;
+
+  // geo1.figures
+  // for (var i = 0; i < geo.figures.count; i++) {
+  //   geo1 = geo1.add(geo.figures.elt(i));
+  // }
+  // geo.startX = 0;
+  // geo.startY = 0;
+  // geo.endX = w;
+  // geo.endY = h;
+  // geo.spot1 = GeneratorEllipseSpot1;
+  // geo.spot2 = GeneratorEllipseSpot2;
+
+  return geo;
+});
+go.Shape.defineFigureGenerator("StartNodeRectangle", function (shape, w, h) {
   var param1 = shape ? shape.parameter1 : NaN;
   if (isNaN(param1) || param1 < 0) param1 = 5;  // default corner
   param1 = Math.min(param1, w / 3);
   param1 = Math.min(param1, h / 3);
 
   var cpOffset = param1 * KAPPA;
+  // var geo = new go.Geometry(go.Geometry.Ellipse)
   var geo = new go.Geometry()
+    // Rounded rectangle
     .add(new go.PathFigure(param1, 0, true)
       .add(new go.PathSegment(go.PathSegment.Line, w - param1, 0))
       .add(new go.PathSegment(go.PathSegment.Bezier, w, param1, w - cpOffset, 0, w, cpOffset))
@@ -50,34 +145,6 @@ go.Shape.defineFigureGenerator("StartNode", function (shape, w, h) {  // predefi
   }
   return geo;
 });
-
-function makePattern() {
-  var patternCanvas = document.createElement('canvas');
-  patternCanvas.width = 40;
-  patternCanvas.height = 40;
-  var pctx = patternCanvas.getContext('2d')!;
-
-  // This creates a shape similar to a diamond leaf
-  pctx.beginPath();
-  pctx.moveTo(0.0, 40.0);
-  pctx.lineTo(26.9, 36.0);
-  pctx.bezierCurveTo(31.7, 36.0, 36.0, 32.1, 36.0, 27.3);
-  pctx.lineTo(40.0, 0.0);
-  pctx.lineTo(11.8, 3.0);
-  pctx.bezierCurveTo(7.0, 3.0, 3.0, 6.9, 3.0, 11.7);
-  pctx.lineTo(0.0, 40.0);
-  pctx.closePath();
-  pctx.fillStyle = "rgb(188, 222, 178)";
-  pctx.fill();
-  pctx.lineWidth = 0.8;
-  pctx.strokeStyle = "rgb(0, 156, 86)";
-  pctx.lineJoin = "miter";
-  pctx.miterLimit = 4.0;
-  pctx.stroke();
-
-  return patternCanvas;
-}
-// go.Shape.defineFigureGenerator("Border", "RoundedRectangle");  // predefined in 2.0
 
 const doubleStrokePattern = new go.Shape({
   geometryString: "M0 0 L1 0 M0 5 L1 5",
@@ -136,7 +203,7 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
         {
           'undoManager.isEnabled': true,  // must be set to allow for model change listening
           // 'undoManager.maxHistoryLength': 0,  // uncomment disable undo/redo functionality
-          'clickCreatingTool.archetypeNodeData': { text: 'new node', color: 'lightblue', final: false },
+          'clickCreatingTool.archetypeNodeData': { text: 'new node', color: nodeColor, final: false },
           // draggingTool: (),  // defined in GuidedDraggingTool.ts
           // draggingTool: new go.DraggingTool(),  // defined in GuidedDraggingTool.ts
           // 'draggingTool.horizontalGuidelineColor': 'blue',
@@ -197,7 +264,9 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
         $(go.Shape,
           // $(go.Shape, 'Border',
           {
-            figure: 'RoundedRectangle',
+            // figure: 'RoundedRectangle',
+            figure: 'Ellipse',
+            // figure: 'Cylinder1',
             name: 'SHAPE', fill: 'white', strokeWidth: 2,
             // stroke: 'white',
             // stroke: $(go.Brush, 'Pattern', { pattern: $(go.Shape, {geometryString:"M0 0 L1 0 M0 3 L1 3", fill:"transparent", color:"black", strokeWidth:2 })}),
@@ -234,7 +303,10 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
             if (tb) {
               e.diagram.commandHandler.editTextBlock(tb as go.TextBlock);
             }
-          }
+          },
+          // routing: go.Link.Normal,
+          curve: go.Link.Bezier
+          // curve: go.Link.JumpOver
         },
         new go.Binding('relinkableFrom', 'canRelink').ofModel(),
         new go.Binding('relinkableTo', 'canRelink').ofModel(),

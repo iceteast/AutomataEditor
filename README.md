@@ -55,3 +55,9 @@ The editor should be intuitive and easy to use.
 - [ ] NFA to DFA
 - [ ] Check equivalence
 - [ ] compute equivalence classes (myhill- [ ]nerode)
+- [ ] Regex labels
+
+
+### Preview
+
+![Concept](concept.png)
