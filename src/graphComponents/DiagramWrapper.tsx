@@ -1,13 +1,7 @@
-/*
-*  Copyright (C) 1998-2022 by Northwoods Software Corporation. All Rights Reserved.
-*/
-
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
 import * as React from 'react';
 import { nodeColor } from '../Const';
-
-// import { GuidedDraggingTool } from '../GuidedDraggingTool';
 
 import './Diagram.css';
 
@@ -24,53 +18,9 @@ interface DiagramProps {
 var GeneratorEllipseSpot1 = new go.Spot(0.156, 0.156);
 var GeneratorEllipseSpot2 = new go.Spot(0.844, 0.844);
 var KAPPA = 4 * ((Math.sqrt(2) - 1) / 3);
-// go.Shape.setFigureParameter("RoundedRectangle", 0, new FigureParameter("CornerRounding", 5));
 
-go.Shape.defineFigureGenerator("HalfEllipse", function (shape, w, h) {
-  return new go.Geometry()
-    .add(new go.PathFigure(0, 0, true)
-      .add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 0, 0, KAPPA, (.5 - KAPPA * 0.5) * w, 0))
-      .add(new go.PathSegment(go.PathSegment.Bezier, 1.0 * w, 0, (.5 + KAPPA * 0.5) * w, 0, 1.0 * w, KAPPA))
-      .add(new go.PathSegment(go.PathSegment.Line, w, h))
-    )
-    .setSpots(0, 0.156, 0.844, 0.844);
-});
-
-go.Shape.defineFigureGenerator("Cylinder1", function (shape, w, h) {
-  var param1 = shape ? shape.parameter1 : NaN;  // half the height of the ellipse
-  if (isNaN(param1)) param1 = 5; // default value
-  param1 = Math.min(param1, h / 3);
-
-  var geo = new go.Geometry();
-  var cpxOffset = KAPPA * .5;
-  var fig = new go.PathFigure(0, param1, true);
-  geo.add(fig);
-  // The base (top)
-  fig.add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 0, 0, KAPPA * param1,
-    (.5 - cpxOffset) * w, 0));
-  fig.add(new go.PathSegment(go.PathSegment.Bezier, 1.0 * w, param1, (.5 + cpxOffset) * w, 0,
-    1.0 * w, KAPPA * param1));
-  fig.add(new go.PathSegment(go.PathSegment.Line, w, h - param1));
-  // Bottom curve
-  fig.add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 1.0 * h, 1.0 * w, h - KAPPA * param1,
-    (.5 + cpxOffset) * w, 1.0 * h));
-  fig.add(new go.PathSegment(go.PathSegment.Bezier, 0, h - param1, (.5 - cpxOffset) * w, 1.0 * h,
-    0, h - KAPPA * param1));
-  fig.add(new go.PathSegment(go.PathSegment.Line, 0, param1));
-
-  var fig2 = new go.PathFigure(w, param1, false);
-  geo.add(fig2);
-  fig2.add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 2 * param1, 1.0 * w, 2 * param1 - KAPPA * param1,
-    (.5 + cpxOffset) * w, 2 * param1));
-  fig2.add(new go.PathSegment(go.PathSegment.Bezier, 0, param1, (.5 - cpxOffset) * w, 2 * param1,
-    0, 2 * param1 - KAPPA * param1));
-
-  geo.spot1 = new go.Spot(0, 0, 0, 2 * param1);
-  geo.spot2 = new go.Spot(1, 1);
-  return geo;
-});
-
-
+// HalfEllipse, Cylinder1
+// https://github.com/NorthwoodsSoftware/GoJS/blob/master/extensionsTS/Figures.ts
 
 go.Shape.defineFigureGenerator("StartNodeCircle", function (shape, w, h) {
   var geo = new go.Geometry(go.Geometry.Ellipse)
@@ -202,14 +152,7 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
       $(go.Diagram,
         {
           'undoManager.isEnabled': true,  // must be set to allow for model change listening
-          // 'undoManager.maxHistoryLength': 0,  // uncomment disable undo/redo functionality
           'clickCreatingTool.archetypeNodeData': { text: 'new node', color: nodeColor, final: false },
-          // draggingTool: (),  // defined in GuidedDraggingTool.ts
-          // draggingTool: new go.DraggingTool(),  // defined in GuidedDraggingTool.ts
-          // 'draggingTool.horizontalGuidelineColor': 'blue',
-          // 'draggingTool.verticalGuidelineColor': 'blue',
-          // 'draggingTool.centerGuidelineColor': 'green',
-          // 'draggingTool.guidelineWidth': 1,
           layout: $(go.ForceDirectedLayout),
           model: $(go.GraphLinksModel,
             {
@@ -234,23 +177,19 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
     // define a simple Node template
     diagram.nodeTemplate =
       $(go.Node, 'Auto',  // the Shape will go around the TextBlock
-        // negate obj.part?.data.final
         {
           contextClick: (e, obj) => {
             if (obj.part) {
-              // obj.part.data.final = !obj.part.data.final;
               var data = obj.part.data;
               diagram.model.commit((m) => {
-                // var data = m.nodeDataArray.find((n) => n.key === obj.part!.data.key)
                 m.set(data, 'final', !data.final);
               }, "toggle final");
-              // console.log("Toggle final");
-              // console.log(obj.part.data);
             }
           },
         },
         new go.Binding('location', 'loc', go.Point.parse).makeTwoWay(go.Point.stringify),
         new go.Binding('deletable').makeTwoWay(),
+        // Alternative for double shape (instead of outline)
         // $(go.Shape, 'RoundedRectangle',
         //   {
         //     name: 'SHAPE2', fill: 'white', strokeWidth: 2,
@@ -262,27 +201,17 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
         // new go.Binding('fill', 'color')),
 
         $(go.Shape,
-          // $(go.Shape, 'Border',
           {
             // figure: 'RoundedRectangle',
             figure: 'Ellipse',
-            // figure: 'Cylinder1',
             name: 'SHAPE', fill: 'white', strokeWidth: 2,
-            // stroke: 'white',
-            // stroke: $(go.Brush, 'Pattern', { pattern: $(go.Shape, {geometryString:"M0 0 L1 0 M0 3 L1 3", fill:"transparent", color:"black", strokeWidth:2 })}),
-            // stroke: $(go.Brush, 'Pattern', { pattern: makePattern() }),
-            // pathPattern: doubleStrokePattern,
-            // stroke: $(go.Brush, "Radial", { 0.0: "white", 1.0: "gray" }),
-            // set the port properties:
             portId: '', fromLinkable: true, toLinkable: true, cursor: 'pointer',
             toLinkableSelfNode: true, fromLinkableSelfNode: true,
             toLinkableDuplicates: true, fromLinkableDuplicates: true
           },
-          // Shape.fill is bound to Node.data.color
           new go.Binding('fill', 'color'),
           new go.Binding('figure').makeTwoWay(),
           new go.Binding('pathPattern', 'final', (final: boolean) => final ? doubleStrokePattern : null)),
-        // new go.Binding('stro', 'color')),
         $(go.TextBlock,
           { margin: 8, editable: true, font: '400 .875rem Roboto, sans-serif' },  // some room around the text
           new go.Binding('text').makeTwoWay()
@@ -294,11 +223,6 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
       $(go.Link,
         {
           doubleClick: (e, obj) => {
-            // console.log("double click");
-            // console.log(obj.part);
-            // console.log(obj.part?.findObject("TEXT"));
-            // obj.
-            // obj.part?.findObject("TEXT")?
             var tb = obj.part?.findObject("TEXT");
             if (tb) {
               e.diagram.commandHandler.editTextBlock(tb as go.TextBlock);
