@@ -1,0 +1,25 @@
+.multi {
+    padding: 20px;
+    display: flex;
+}
+
+.multi>div {
+    flex: 1;
+    /* width: 50%;
+    float: left;
+    padding: 20px; */
+    padding: 10px;
+}
+
+.multiInput {}
+
+.multiResult {
+    padding-top: 10px;
+}
+
+.testcase {
+    /* font-size: x-large; */
+    /* display: 'flex';
+    align-items: 'center';
+    flex-wrap: 'wrap'; */
+}

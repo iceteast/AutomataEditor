@@ -1,0 +1,31 @@
+.singleWord {
+    padding-right: 10px;
+}
+
+.wordBox {
+    display: flex;
+    padding-top: 10px;
+}
+
+.done {
+    color: gray;
+}
+
+.proceed {
+    border-left: 0.1em solid gray;
+    padding-left: 0.25em;
+    color: Black;
+}
+
+.wordTrace {
+    padding-top: 10px;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    font-size: x-large;
+    letter-spacing: 0.5em;
+}
+
+.trace {
+    display: flex;
+}

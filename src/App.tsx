@@ -1,5 +1,6 @@
 import * as go from 'gojs';
 import * as React from 'react';
+import { produce } from 'immer';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -10,8 +11,11 @@ import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
 import './App.css';
-import { nodeColor } from './Const';
+import { nodeColor, nodeHighlightColor } from './Const';
 import Info from './components/Info';
+import { convertToGraph, Node as GraphNode } from './GraphUtils';
+import Multi from './components/Multi';
+import Single from './components/Single';
 
 
 function App() {
@@ -52,8 +56,10 @@ function App() {
   }
 
   // only once?
+  // React.useEffect(() => {
   refreshNodeIndex(nodeDataArray);
   refreshLinkIndex(linkDataArray);
+  // }, []);
 
   const handleDiagramEvent = (e: go.DiagramEvent) => {
     const name = e.name;
@@ -95,6 +101,8 @@ function App() {
     const modifiedNodeMap = new Map<go.Key, go.ObjectData>();
     const modifiedLinkMap = new Map<go.Key, go.ObjectData>();
     let narr = nodeDataArray;
+    // let narr = [...nodeDataArray];
+    // let narr = nodeDataArray.slice();
     if (modifiedNodeData) {
       modifiedNodeData.forEach((nd: go.ObjectData) => {
         modifiedNodeMap.set(nd.key, nd);
@@ -129,6 +137,7 @@ function App() {
     }
 
     let larr = linkDataArray;
+    // let larr = [...linkDataArray];
     if (modifiedLinkData) {
       modifiedLinkData.forEach((ld: go.ObjectData) => {
         modifiedLinkMap.set(ld.key, ld);
@@ -179,14 +188,55 @@ function App() {
         if (idx !== undefined && idx >= 0) {
           linkDataArray[idx] = data;
           setSkipsDiagramUpdate(false);
+          // setSkipsDiagramUpdate(produce((_) => false));
         }
       } else {
-        const idx = mapNodeKeyIdx.get(key);
+        // const idx = mapNodeKeyIdx.get(key);
+        const idx = nodeDataArray.findIndex((n: go.ObjectData) => n.key === key);
         if (idx !== undefined && idx >= 0) {
           nodeDataArray[idx] = data;
           setSkipsDiagramUpdate(false);
+          // setSkipsDiagramUpdate(produce((_) => false));
         }
       }
+    }
+  }
+
+
+  const colorNodes = (nodes: GraphNode[]) => {
+    // console.log("colorNodes", nodes, color);
+    let changed = false;
+    const narr = nodeDataArray.map((nd: go.ObjectData) => {
+      const color = nodes.some((n: GraphNode) => n.id === nd.key) ? nodeHighlightColor : nodeColor;
+      if (nd.color !== color) {
+        changed = true;
+        return { ...nd, color: color };
+      }
+      return nd;
+    });
+    // for (let i = 0; i < nodes.length; i++) {
+    //   const idx = mapLinkKeyIdx.get(nodes[i].id);
+    //   if (idx !== undefined && idx >= 0) {
+    //     if (nodeDataArray[idx].color !== color) {
+    //       nodeDataArray[idx].color = color;
+    //       changed = true;
+    //     }
+    //   } else {
+    //     console.log("colorNodes: node not found", nodes[i]);
+    //   }
+    //   // let node = nodes[i];
+    //   // node.color = color;
+    //   // if(node.children){
+    //   //   colorNodes(node.children, color);
+    //   // }
+    // }
+    if (changed) {
+      console.log("colorNodes", nodes);
+      // console.log("Changed");
+      // console.log("old nodes array: ", nodeDataArray);
+      // console.log("node array: ", narr);
+      setNodeDataArray(narr);
+      setSkipsDiagramUpdate(false);
     }
   }
 
@@ -201,15 +251,17 @@ function App() {
     />;
   }
 
-  const [singleMulti, setSingleMulti] = React.useState<string>('single');
+  const [singleMulti, setSingleMulti] = React.useState<"single" | "multi">('single');
 
   const handleSingleMultiChange = (
     event: React.MouseEvent<HTMLElement>,
-    newValue: string | null,
+    newValue: "single" | "multi",
   ) => {
     if (newValue && newValue !== singleMulti)
       setSingleMulti(newValue);
   };
+
+  var graph = convertToGraph(nodeDataArray, linkDataArray);
 
   return (
     <div className='app'>
@@ -237,7 +289,10 @@ function App() {
           </ToggleButton>
         </ToggleButtonGroup>
       </div>
-      {/* {inspector} */}
+      <div>
+        {singleMulti === 'single' ? <Single graph={graph} colorNodes={colorNodes} /> : <Multi graph={graph} />}
+      </div>
+      {inspector}
     </div>
   );
 
