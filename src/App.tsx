@@ -15,11 +15,12 @@ import { SelectionInspector } from './graphComponents/SelectionInspector';
 import './App.css';
 import { nodeColor, nodeHighlightColor, startNodeShape } from './Const';
 import Info from './components/Info';
-import { convertToGraph, getPowerGraph, getReachableGraph, Node as GraphNode, updateModelWithGraph } from './GraphUtils';
+import { getPowerGraph, getReachableGraph, Node as GraphNode } from './GraphUtils';
 import Multi from './components/Multi';
 import Single from './components/Single';
 import createPersistedState from 'use-persisted-state';
 import Button from '@mui/material/Button';
+import { convertToGraph, updateModelWithGraph } from './GraphConversion';
 
 
 function App() {
@@ -293,11 +294,11 @@ function App() {
       {
         nodes: [
           { id: 0, label: "Start", isAccepting: false },
-          { id: 1, label: "A", isAccepting: false },
+          { id: 1, label: "A", isAccepting: true },
         ],
         links: [
           { from: 0, to: 1, label: "a" },
-          // { from: 1, to: 0, label: "" },
+          { from: 1, to: 1, label: "b" },
         ],
       },
       setNodeDataArray,

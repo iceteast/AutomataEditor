@@ -1,4 +1,4 @@
-import { nodeColor, startNodeShape } from "./Const";
+import { ascii, separator } from "./Const";
 
 export interface Graph {
     nodes: Node[];
@@ -19,36 +19,6 @@ export interface Link {
     label: string;
 }
 
-export function convertToGraph(nodeDataArray: Array<go.ObjectData>, linkDataArray: Array<go.ObjectData>): Graph {
-    const nodes: Node[] = [];
-    const links: Link[] = [];
-    nodeDataArray.forEach((node: go.ObjectData) => {
-        let x = undefined;
-        let y = undefined;
-        if (node.loc) {
-            x = parseInt(node.loc.split(" ")[0]);
-            y = parseInt(node.loc.split(" ")[1]);
-        }
-        nodes.push({
-            id: node.key,
-            label: node.text,
-            x: x,
-            y: y,
-            isAccepting: node.final,
-        });
-    });
-    linkDataArray.forEach((link: go.ObjectData) => {
-        links.push({
-            from: link.from,
-            to: link.to,
-            label: link.text,
-        });
-    });
-    return { nodes, links };
-}
-
-// TODO: update model
-
 export function labelAcceptsSymbol(symbol: string, label: string): boolean {
     // if (label === "") {
     //     return true;
@@ -56,13 +26,31 @@ export function labelAcceptsSymbol(symbol: string, label: string): boolean {
     if (!label) {
         return true;
     }
-    if (label.includes(";")) {
-        const labels = label.split(";");
-        return labels.includes(symbol);
-    }
+    // now the separator is valid regex
+    // if (label.includes(separator) && label !== separator) {
+    //     const labels = label.split(separator);
+    //     return labels.includes(symbol);
+    // }
+
     // return label === symbol;
     // use label as regex
     return new RegExp(label).test(symbol);
+}
+
+export function closeStateEpsilon(graph: Graph, state: Node[]): Node[] {
+    const newStates: Node[] = [];
+    state.forEach((node: Node) => {
+        const links = graph.links.filter((link: Link) => link.from === node.id);
+        links.forEach((link: Link) => {
+            if (isEpsilon(link.label)) {
+                const target = graph.nodes.find((n: Node) => n.id === link.to);
+                if (target) {
+                    newStates.push(target);
+                }
+            }
+        });
+    });
+    return unique(state.concat(newStates));
 }
 
 export function nextState(graph: Graph, currentState: Node[], symbol: string): Node[] {
@@ -81,7 +69,7 @@ export function nextState(graph: Graph, currentState: Node[], symbol: string): N
             nextStates.push(graph.nodes.find((node: Node) => node.id === link.to)!);
         }
     });
-    return nextStates;
+    return closeStateEpsilon(graph, nextStates);
 }
 
 export function getStart(graph: Graph): Node {
@@ -99,36 +87,6 @@ export function checkWord(graph: Graph, word: string): boolean {
         // console.log(" after ", sym, ":", currentNodes);
     }
     return currentNodes.some((node) => node.isAccepting);
-}
-
-export function updateModelWithGraph(
-    graph: Graph,
-    setNodeDataArray: React.Dispatch<React.SetStateAction<go.ObjectData[]>>,
-    setLinkDataArray: React.Dispatch<React.SetStateAction<go.ObjectData[]>>
-) {
-    console.log("updateModelWithGraph", graph);
-    setNodeDataArray(
-        graph.nodes.map((node: Node) => {
-            return {
-                key: node.id,
-                text: node.label,
-                final: node.isAccepting,
-                color: nodeColor,
-                ...(node.id === 0 && { figure: startNodeShape, deleteable: false }),
-                // ...(node.x !== undefined && node.y !== undefined && { loc: node.x + " " + node.y })
-            };
-        })
-    );
-    setLinkDataArray(
-        graph.links.map((link: Link, i: number) => {
-            return {
-                key: -i - 1,
-                from: link.from,
-                to: link.to,
-                text: link.label,
-            };
-        })
-    );
 }
 
 export function getReachableGraph(graph: Graph) {
@@ -158,10 +116,9 @@ export function getReachableGraph(graph: Graph) {
 
 
 
-
-
-
-
+function isEpsilon(label: string) {
+    return label === "" || label === "ε" || label === "epsilon";
+}
 
 
 
@@ -170,13 +127,25 @@ export function getAlphabet(graph: Graph) {
     const alphabet = new Set<string>();
     // TODO: make regex links atomic (or all links)
     graph.links.forEach((link: Link) => {
-        if (link.label && link.label !== "ε") {
-            if (link.label === ";") {
-                alphabet.add(";");
-            } else {
-                link.label.split(";").forEach((symbol: string) => {
-                    if (symbol.length > 0) {
-                        alphabet.add(symbol);
+        if (link.label && !isEpsilon(link.label)) {
+            // alphabet.add(link.label);
+
+
+            // if (link.label === ";") {
+            //     alphabet.add(";");
+            // } else {
+            //     link.label.split(";").forEach((symbol: string) => {
+            //         if (symbol.length > 0) {
+            //             alphabet.add(symbol);
+            //         }
+            //     });
+            // }
+
+            const matches = ascii.match(new RegExp(link.label, "g"));
+            if (matches) {
+                matches.forEach((symbol: string) => {
+                    for (let i = 0; i < symbol.length; i++) {
+                        alphabet.add(symbol[i]);
                     }
                 });
             }
@@ -193,9 +162,17 @@ function getAllSubsets(array: any[]) {
     );
 }
 
+function unique(array: any[]) {
+    return array.filter((item, index, arr) => arr.indexOf(item) === index);
+}
+
 export function getPowerGraph(graph: Graph) {
     const powerName = (nodes: Node[]) => {
         return "{" + nodes.map((node: Node) => node.label).sort().join(", ") + "}";
+    }
+
+    const nodeSetIdx = (nodes: Node[]) => {
+        return unique(nodes.map((node: Node) => node.id)).sort().join(" ");
     }
 
     const startNode = getStart(graph);
@@ -210,7 +187,7 @@ export function getPowerGraph(graph: Graph) {
     const powerNodes: Node[] =
         subsets.map((subset: Node[], i: number) => {
             const key = setToId(subset, i);
-            keymap.set(subset.map((node: Node) => node.id).sort().join(" "), key);
+            keymap.set(nodeSetIdx(subset), key);
             return {
                 id: key,
                 label: powerName(subset),
@@ -223,14 +200,14 @@ export function getPowerGraph(graph: Graph) {
 
     const powerLinks: Link[] = [];
     subsets.forEach((subset: Node[]) => {
-        const from = keymap.get(subset.map((node: Node) => node.id).sort().join(" "))!;
+        const from = keymap.get(nodeSetIdx(subset))!;
         alphabet.forEach((symbol: string) => {
             const nextStates = nextState(graph, subset, symbol);
-            const to = keymap.get(nextStates.map((node: Node) => node.id).sort().join(" "))!;
-            // if (keymap.get(nextStates.map((node: Node) => node.id).sort().join(" ")) == undefined) {
-            //     console.log("nextStates", nextStates);
-            //     console.log("to", to);
-            // }
+            const to = keymap.get(nodeSetIdx(nextStates))!;
+            if (keymap.get(nodeSetIdx(nextStates)) === undefined) {
+                console.log("nextStates", nextStates);
+                console.log("to", to);
+            }
             powerLinks.push({ from: from, to: to, label: symbol });
         });
     });
@@ -241,6 +218,11 @@ export function getPowerGraph(graph: Graph) {
 }
 
 
-// TODO: make atomic links
 // TODO: handle epsilon transitions
-// TODO: split technical functions from this file
+// TODO: make atomic links
+
+// TODO: login via cms (Discourse SSO) or github/google (OAuth)
+
+
+
+// Export: RegEx, 5-Tuple, JSON, Tex

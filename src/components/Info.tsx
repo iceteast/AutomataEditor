@@ -1,4 +1,5 @@
 import Collapsible from 'react-collapsible';
+import { separator } from '../Const';
 import './Info.css';
 
 function Info() {
@@ -13,7 +14,7 @@ function Info() {
                         <li>Drag from an edge to create a link</li>
                         <li>Right click to mark a state as accepting</li>
                         <li>Double click or use F2 to give a label to a link</li>
-                        <li>Either use multiple links or a semicolon (e.g. "2;3")</li>
+                        <li>Either use multiple links or '{separator}' (e.g. "2{separator}3")</li>
                     </ul>
                 </p>
             </Collapsible>
