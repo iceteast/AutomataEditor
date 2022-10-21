@@ -24,6 +24,10 @@ p {
   padding-top: 10px;
 }
 
+.topButtonBar {
+  padding-bottom: 10px;
+}
+
 
 /* .mainButtonBar>* {
   margin: 30px 0;

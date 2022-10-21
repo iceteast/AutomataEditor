@@ -4,18 +4,28 @@ import { produce } from 'immer';
 
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import MenuIcon from '@mui/icons-material/Menu';
+import SaveIcon from '@mui/icons-material/Save';
+import BoltIcon from '@mui/icons-material/Bolt';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import BackupIcon from '@mui/icons-material/Backup';
+import FileOpenIcon from '@mui/icons-material/FileOpen';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Grid from '@mui/material/Grid';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
 
 import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
 import './App.css';
-import { nodeColor, nodeHighlightColor, startNodeShape } from './Const';
+import { formats, nodeColor, nodeHighlightColor, startNodeShape } from './Const';
 import Info from './components/Info';
-import { getPowerGraph, getReachableGraph, Node as GraphNode } from './GraphUtils';
+import { getPowerGraph, getReachableGraph } from './GraphUtils';
+import { Format, Node as GraphNode } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
 import createPersistedState from 'use-persisted-state';
@@ -306,8 +316,92 @@ function App() {
     );
   }, []);
 
+  const [formatStr, setFormatStr] = React.useState('');
+
+  const handleFormatChange = (event: SelectChangeEvent) => {
+    setFormatStr(event.target.value as string);
+  };
+
+  const format = formats.find((f) => f.name === formatStr);
+
+  const importGraph = () => {
+  };
+
+  const exportGraph = () => {
+  };
+
   return (
     <div className='app'>
+      <div className='topButtonBar'>
+        <Grid container direction="row" alignItems="center" spacing={2} >
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<SaveIcon />}
+              disabled={true}
+            >
+              Save
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<FileOpenIcon />}
+              disabled={true}
+            >
+              Load
+            </Button>
+          </Grid>
+
+
+          <Grid item>
+            <FormControl fullWidth style={{ minWidth: 120 }} >
+              <InputLabel id="format-select-label">Format</InputLabel>
+              <Select
+                labelId="format-select-label"
+                id="format-select"
+                value={formatStr}
+                label="Format"
+                onChange={handleFormatChange}
+              >
+                {/* <MenuItem value={10}>Ten</MenuItem>
+                <MenuItem value={20}>Twenty</MenuItem>
+                <MenuItem value={30}>Thirty</MenuItem> */}
+                {
+                  formats.map((format: Format) => {
+                    return <MenuItem value={format.name}>{format.name}</MenuItem>
+                  })
+                }
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<BackupIcon />}
+              disabled={format ? !format.import : true}
+              onClick={importGraph}
+            >
+              Import
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<CloudDownloadIcon />}
+              disabled={format ? !format.export : true}
+              onClick={exportGraph}
+            >
+              Export
+            </Button>
+          </Grid>
+        </Grid>
+      </div>
       <DiagramWrapper
         nodeDataArray={nodeDataArray}
         linkDataArray={linkDataArray}
@@ -349,9 +443,19 @@ function App() {
             <Button
               variant="contained"
               color="primary"
+              startIcon={<BoltIcon />}
               onClick={powerAutomaton}
             >
               Power Automaton
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              disabled={true}
+            >
+              Make atomic
             </Button>
           </Grid>
         </Grid>

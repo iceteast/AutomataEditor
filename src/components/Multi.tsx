@@ -1,4 +1,5 @@
-import { checkWord, Graph } from "../GraphUtils";
+import { checkWord } from "../GraphUtils";
+import { Graph } from "../Interfaces";
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';

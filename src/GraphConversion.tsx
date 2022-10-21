@@ -1,5 +1,5 @@
 import { nodeColor, startNodeShape } from "./Const";
-import { Graph, Node, Link } from "./GraphUtils";
+import { Graph, Link, Node } from "./Interfaces";
 
 export function convertToGraph(nodeDataArray: Array<go.ObjectData>, linkDataArray: Array<go.ObjectData>): Graph {
     const nodes: Node[] = [];

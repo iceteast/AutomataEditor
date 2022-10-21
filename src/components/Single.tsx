@@ -1,4 +1,5 @@
-import { checkWord, getStart, Graph, nextState, Node } from "../GraphUtils";
+import { checkWord, getStartNodes, nextState } from "../GraphUtils";
+import { Graph, Node } from "../Interfaces";
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -92,8 +93,8 @@ function Single({ graph, colorNodes: colorFun }: SingleProp) {
         let newNodes;
         if (iterPos < 0) {
             setIterPos(0);
-            const startNode = getStart(graph);
-            newNodes = [startNode];
+            // const startNode = getStart(graph);
+            newNodes = getStartNodes(graph);
             console.log("Start Simulation");
             // console.log("Current Nodes: ", currentNodes);
         } else {

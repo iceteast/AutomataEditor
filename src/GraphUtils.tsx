@@ -1,23 +1,6 @@
 import { ascii, separator } from "./Const";
+import { Graph, Link, Node } from "./Interfaces";
 
-export interface Graph {
-    nodes: Node[];
-    links: Link[];
-}
-
-export interface Node {
-    id: number;
-    label: string;
-    x?: number;
-    y?: number;
-    isAccepting: boolean;
-}
-
-export interface Link {
-    from: number;
-    to: number;
-    label: string;
-}
 
 export function labelAcceptsSymbol(symbol: string, label: string): boolean {
     // if (label === "") {
@@ -42,6 +25,7 @@ export function closeStateEpsilon(graph: Graph, state: Node[]): Node[] {
     state.forEach((node: Node) => {
         const links = graph.links.filter((link: Link) => link.from === node.id);
         links.forEach((link: Link) => {
+            // console.log("link", link);
             if (isEpsilon(link.label)) {
                 const target = graph.nodes.find((n: Node) => n.id === link.to);
                 if (target) {
@@ -55,7 +39,7 @@ export function closeStateEpsilon(graph: Graph, state: Node[]): Node[] {
 
 export function nextState(graph: Graph, currentState: Node[], symbol: string): Node[] {
     const nextStates: Node[] = [];
-    console.log("compute next states", currentState, symbol);
+    // console.log("compute next states", currentState, symbol);
     // currentState.forEach((state: Node) => {
     //     console.log(state.id);
     // });
@@ -76,9 +60,12 @@ export function getStart(graph: Graph): Node {
     return graph.nodes.find((node: Node) => node.id === 0)!;
 }
 
+export function getStartNodes(graph: Graph): Node[] {
+    return closeStateEpsilon(graph, [getStart(graph)]);
+}
+
 export function checkWord(graph: Graph, word: string): boolean {
-    var startNode = getStart(graph);
-    let currentNodes = [startNode];
+    let currentNodes = getStartNodes(graph);
     // console.log("checkWord", word);
     // console.log(" start", startNode);
     for (let i = 0; i < word.length; i++) {
@@ -91,6 +78,7 @@ export function checkWord(graph: Graph, word: string): boolean {
 
 export function getReachableGraph(graph: Graph) {
     const reachableNodeIds = new Set<Number>();
+    // does not matter if getStart or getStartNodes
     reachableNodeIds.add(getStart(graph).id);
     const newReachableNodeIds = new Set<Number>();
     do {
@@ -116,8 +104,8 @@ export function getReachableGraph(graph: Graph) {
 
 
 
-function isEpsilon(label: string) {
-    return label === "" || label === "ε" || label === "epsilon";
+function isEpsilon(label: string | undefined) {
+    return label === undefined || label === "" || label === "ε" || label === "epsilon";
 }
 
 
@@ -127,7 +115,7 @@ export function getAlphabet(graph: Graph) {
     const alphabet = new Set<string>();
     // TODO: make regex links atomic (or all links)
     graph.links.forEach((link: Link) => {
-        if (link.label && !isEpsilon(link.label)) {
+        if (!isEpsilon(link.label)) {
             // alphabet.add(link.label);
 
 
@@ -218,11 +206,10 @@ export function getPowerGraph(graph: Graph) {
 }
 
 
-// TODO: handle epsilon transitions
 // TODO: make atomic links
 
 // TODO: login via cms (Discourse SSO) or github/google (OAuth)
 
 
 
-// Export: RegEx, 5-Tuple, JSON, Tex
+
