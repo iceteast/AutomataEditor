@@ -1,7 +1,7 @@
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
 import * as React from 'react';
-import { nodeColor } from '../Const';
+import { nodeColor, nodeShape } from '../Const';
 
 import './Diagram.css';
 
@@ -153,7 +153,7 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
         {
           'undoManager.isEnabled': true,  // must be set to allow for model change listening
           'clickCreatingTool.archetypeNodeData': { text: 'new node', color: nodeColor, final: false },
-          // layout: $(go.ForceDirectedLayout),
+          layout: $(go.ForceDirectedLayout),
           model: $(go.GraphLinksModel,
             {
               linkKeyProperty: 'key',  // IMPORTANT! must be defined for merges and data sync when using GraphLinksModel
@@ -203,7 +203,7 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
         $(go.Shape,
           {
             // figure: 'RoundedRectangle',
-            figure: 'Ellipse',
+            figure: nodeShape,
             name: 'SHAPE', fill: 'white', strokeWidth: 2,
             portId: '', fromLinkable: true, toLinkable: true, cursor: 'pointer',
             toLinkableSelfNode: true, fromLinkableSelfNode: true,

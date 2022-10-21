@@ -2,28 +2,32 @@ import * as go from 'gojs';
 import * as React from 'react';
 import { produce } from 'immer';
 
+import ContentCutIcon from '@mui/icons-material/ContentCut';
 import MenuIcon from '@mui/icons-material/Menu';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Grid from '@mui/material/Grid';
 
 import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
 import './App.css';
-import { nodeColor, nodeHighlightColor } from './Const';
+import { nodeColor, nodeHighlightColor, startNodeShape } from './Const';
 import Info from './components/Info';
-import { convertToGraph, Node as GraphNode } from './GraphUtils';
+import { convertToGraph, getPowerGraph, getReachableGraph, Node as GraphNode, updateModelWithGraph } from './GraphUtils';
 import Multi from './components/Multi';
 import Single from './components/Single';
 import createPersistedState from 'use-persisted-state';
+import Button from '@mui/material/Button';
 
 
 function App() {
 
   const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(
     [
-      { key: 0, text: 'Start', color: nodeColor, loc: '0 0', deletable: false, figure: "StartNodeRectangle" },
+      // { key: 0, text: 'Start', color: nodeColor, deletable: false, figure: startNodeShape },
+      { key: 0, text: 'Start', color: nodeColor, loc: '0 0', deletable: false, figure: startNodeShape },
     ]
   );
   const [linkDataArray, setLinkDataArray] = createPersistedState<Array<go.ObjectData>>('linkArray')(
@@ -273,6 +277,34 @@ function App() {
 
   var graph = convertToGraph(nodeDataArray, linkDataArray);
 
+
+  const cutUnreachableNodes = () => {
+    const newGraph = getReachableGraph(graph);
+    updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
+  };
+
+  const powerAutomaton = () => {
+    const newGraph = getPowerGraph(graph);
+    updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
+  };
+
+  React.useEffect(() => {
+    updateModelWithGraph(
+      {
+        nodes: [
+          { id: 0, label: "Start", isAccepting: false },
+          { id: 1, label: "A", isAccepting: false },
+        ],
+        links: [
+          { from: 0, to: 1, label: "a" },
+          // { from: 1, to: 0, label: "" },
+        ],
+      },
+      setNodeDataArray,
+      setLinkDataArray
+    );
+  }, []);
+
   return (
     <div className='app'>
       <DiagramWrapper
@@ -285,19 +317,43 @@ function App() {
       />
       <Info />
       <div className='mainButtonBar'>
-        <ToggleButtonGroup
-          value={singleMulti}
-          exclusive
-          onChange={handleSingleMultiChange}
-          aria-label="text alignment"
-        >
-          <ToggleButton value="single" aria-label="left aligned">
-            <RemoveIcon />
-          </ToggleButton>
-          <ToggleButton value="multi" aria-label="centered">
-            <MenuIcon />
-          </ToggleButton>
-        </ToggleButtonGroup>
+        <Grid container direction="row" alignItems="center" spacing={2} >
+          <Grid item>
+            <ToggleButtonGroup
+              value={singleMulti}
+              exclusive
+              onChange={handleSingleMultiChange}
+              aria-label="text alignment"
+              size='small'
+            >
+              <ToggleButton value="single" aria-label="left aligned">
+                <RemoveIcon />
+              </ToggleButton>
+              <ToggleButton value="multi" aria-label="centered">
+                <MenuIcon />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<ContentCutIcon />}
+              onClick={cutUnreachableNodes}
+            >
+              Cut unreachable
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={powerAutomaton}
+            >
+              Power Automaton
+            </Button>
+          </Grid>
+        </Grid>
       </div>
       <div>
         {singleMulti === 'single' ? <Single graph={graph} colorNodes={colorNodes} /> : <Multi graph={graph} />}
