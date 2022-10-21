@@ -16,19 +16,20 @@ import Info from './components/Info';
 import { convertToGraph, Node as GraphNode } from './GraphUtils';
 import Multi from './components/Multi';
 import Single from './components/Single';
+import createPersistedState from 'use-persisted-state';
 
 
 function App() {
 
-  const [nodeDataArray, setNodeDataArray] = React.useState<Array<go.ObjectData>>(
+  const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(
     [
       { key: 0, text: 'Start', color: nodeColor, loc: '0 0', deletable: false, figure: "StartNodeRectangle" },
     ]
   );
-  const [linkDataArray, setLinkDataArray] = React.useState<Array<go.ObjectData>>(
+  const [linkDataArray, setLinkDataArray] = createPersistedState<Array<go.ObjectData>>('linkArray')(
     []
   );
-  const [modelData, setModelData] = React.useState<go.ObjectData>(
+  const [modelData, setModelData] = createPersistedState<go.ObjectData>('modelData')(
     { canRelink: true }
   );
   const [selectedData, setSelectedData] = React.useState<go.ObjectData | null>(
@@ -175,6 +176,15 @@ function App() {
       setModelData(modifiedModelData);
     }
     setSkipsDiagramUpdate(true); // the GoJS model already knows about these updates
+
+
+    setNodeDataArray(narr);
+    refreshNodeIndex(narr);
+
+    setLinkDataArray(larr);
+    refreshLinkIndex(larr);
+
+
   }
 
 
@@ -251,7 +261,7 @@ function App() {
     />;
   }
 
-  const [singleMulti, setSingleMulti] = React.useState<"single" | "multi">('single');
+  const [singleMulti, setSingleMulti] = createPersistedState<"single" | "multi">('singleMulti')('single');
 
   const handleSingleMultiChange = (
     event: React.MouseEvent<HTMLElement>,
@@ -292,7 +302,7 @@ function App() {
       <div>
         {singleMulti === 'single' ? <Single graph={graph} colorNodes={colorNodes} /> : <Multi graph={graph} />}
       </div>
-      {inspector}
+      {/* {inspector} */}
     </div>
   );
 

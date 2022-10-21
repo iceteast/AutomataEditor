@@ -13,6 +13,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Grid from '@mui/material/Grid';
 
 import "./Multi.css";
+import createPersistedState from "use-persisted-state";
 
 interface MultiProp {
     graph: Graph;
@@ -20,7 +21,8 @@ interface MultiProp {
 
 
 function Multi({ graph }: MultiProp) {
-    const [tests, setTests] = React.useState('0|abc');
+    // const [tests, setTests] = React.useState('0|abc');
+    const [tests, setTests] = createPersistedState<string>('testCases')('0|abc');
     const [result, setResult] = React.useState<JSX.Element>();
 
     const [checkBtnColor, setCheckBtnColor] = React.useState<"primary" | "info" | "success" | "error">('primary');

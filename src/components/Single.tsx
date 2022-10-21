@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import React from "react";
+import createPersistedState from 'use-persisted-state';
 
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
@@ -26,7 +27,8 @@ interface SingleProp {
 
 function Single({ graph, colorNodes: colorFun }: SingleProp) {
 
-    const [word, setWord] = React.useState('');
+    // const [word, setWord] = React.useState('');
+    const [word, setWord] = createPersistedState<string>('word')('');
     const [currentNodes, setCurrentNodes] = React.useState<Node[]>([]);
     const [iterPos, setIterPos] = React.useState(-1);
     const [log, setLog] = React.useState<Node[][]>([]);

@@ -153,7 +153,7 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
         {
           'undoManager.isEnabled': true,  // must be set to allow for model change listening
           'clickCreatingTool.archetypeNodeData': { text: 'new node', color: nodeColor, final: false },
-          layout: $(go.ForceDirectedLayout),
+          // layout: $(go.ForceDirectedLayout),
           model: $(go.GraphLinksModel,
             {
               linkKeyProperty: 'key',  // IMPORTANT! must be defined for merges and data sync when using GraphLinksModel
