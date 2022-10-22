@@ -47,6 +47,9 @@ import { convertToGraph, updateModelWithGraph } from './GraphConversion';
 
 function App() {
 
+  const admin = true;
+
+
   const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(
     [
       // { key: 0, text: 'Start', color: nodeColor, deletable: false, figure: startNodeShape },
@@ -302,11 +305,17 @@ function App() {
 
 
   const cutUnreachableNodes = () => {
+    if (!admin) {
+      return;
+    }
     const newGraph = getReachableGraph(graph);
     updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
   };
 
   const powerAutomaton = () => {
+    if (!admin) {
+      return;
+    }
     const newGraph = getPowerGraph(graph);
     updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
   };
@@ -517,26 +526,30 @@ function App() {
               </ToggleButton>
             </ToggleButtonGroup>
           </Grid>
-          <Grid item>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<ContentCutIcon />}
-              onClick={cutUnreachableNodes}
-            >
-              Cut unreachable
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<BoltIcon />}
-              onClick={powerAutomaton}
-            >
-              Power Automaton
-            </Button>
-          </Grid>
+          {admin &&
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<ContentCutIcon />}
+                onClick={cutUnreachableNodes}
+              >
+                Cut unreachable
+              </Button>
+            </Grid>
+          }
+          {admin &&
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<BoltIcon />}
+                onClick={powerAutomaton}
+              >
+                Power Automaton
+              </Button>
+            </Grid>
+          }
           <Grid item>
             <Button
               variant="contained"
