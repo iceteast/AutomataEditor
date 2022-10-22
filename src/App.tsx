@@ -356,6 +356,7 @@ function App() {
   React.useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const pwd = queryParams.get('pwd');
+    // TODO: use hash function here (see password check repo)
     if (pwd === 'ti_admin') {
       setAdmin(true);
     }
