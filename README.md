@@ -4,6 +4,11 @@
 
 ## Goals
 
+### General
+
+- [ ] link old editor https://neuralcoder3.github.io/
+- [ ] redirect from https://neuralcoder3.github.io/
+
 ### Automata Editor
 
 The editor should be intuitive and easy to use.
@@ -20,19 +25,21 @@ The editor should be intuitive and easy to use.
 - [x] add edges
 - [x] delete nodes, edges
 - [ ] save/load automata
-- [ ] extract simple datastructure
+- [x] extract simple datastructure
 - [x] zoom
 - [x] pan
 
 ### Export Formats
 
 - [ ] Graphviz
-- [ ] LaTeX (Tikz)
-- [ ] JSON
-- [ ] Text
+- [x] LaTeX (Tikz)
+- [x] JSON
+- [x] Text (5-Tuple)
+- [x] Url
 - [ ] Image
 - [ ] SVG
-- [ ] Table
+- [ ] Table (for Turing)
+- [ ] RegEx
 
 ### Memory
 
@@ -44,22 +51,35 @@ The editor should be intuitive and easy to use.
 
 ### Simulation
 
-- [ ] Step through automata (highlight current node and position in word)
-- [ ] Word input
-- [ ] list of words (marked intended rejections) => bulk judge
-- [ ] NFA simulation
+- [x] Step through automata (highlight current node and position in word)
+- [x] Word input
+- [x] list of words (marked intended rejections) => bulk judge
+- [x] NFA simulation
+- [ ] Turing simulation
 
 ### Special Features
 
 - [ ] Regex to automata
 - [ ] Automata to regex
-- [ ] Minize automata
-- [ ] NFA to DFA
-- [ ] Check equivalence
-- [ ] compute equivalence classes (myhill- [ ]nerode)
-- [ ] Regex labels
+- [x] Minize automata
+- [x] NFA to DFA (power automaton)
+- [ ] Check equivalence (as import)
+- [ ] compute equivalence classes (myhill- [ ]nerode) (as export)
+- [x] Regex labels
 
+### Bugs/Tests
+
+- [ ] Check for power automaton (epsilons)
+- [ ] Check for regex labels
 
 ### Preview
 
 ![Concept](concept.png)
+
+
+## Technical
+
+To install the packages, you might need to use `npm i --legacy-peer-deps`.
+
+The theory is abstracted in `src/GraphUtils.tsx` and `src/interfaces.tsx`.
+
