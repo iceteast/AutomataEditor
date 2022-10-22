@@ -218,7 +218,7 @@ export function getPowerGraph(graph: Graph) {
 export function toLatex(graph: Graph) {
 
     const quoteLabel = (label: string) => {
-        return label.replace(/_/g, "\\_").replace(/#/g, "\\#").replace("{", "\\{").replace("}", "\\}");
+        return label.replace(/_/g, "\\_").replace(/#/g, "\\#").replaceAll("{", "\\{").replaceAll("}", "\\}");
     }
 
     let str = `\\documentclass {article}
