@@ -10,17 +10,22 @@ export const ascii = Array.from(Array(128).keys()).map((i) => String.fromCharCod
 export const formats: Format[] = [
     {
         name: "JSON",
-        import: true, // TODO:
-        export: true // TODO:
+        import: true,
+        export: true
+    },
+    {
+        name: "URL",
+        import: true,
+        export: true
     },
     {
         name: "RegEx",
-        import: false, // for now
-        export: false // for now
+        import: false, // TODO: for now
+        export: false // TODO: for now
     },
     {
         name: "5-Tuple",
-        import: false, // for now
+        import: false, // TODO: for now
         export: true // TODO:
     },
     {
@@ -28,9 +33,4 @@ export const formats: Format[] = [
         import: false,
         export: true // TODO:
     },
-    {
-        name: "URL",
-        import: true,
-        export: true
-    }
 ]

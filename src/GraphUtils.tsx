@@ -65,15 +65,20 @@ export function getStartNodes(graph: Graph): Node[] {
 }
 
 export function checkWord(graph: Graph, word: string): boolean {
-    let currentNodes = getStartNodes(graph);
-    // console.log("checkWord", word);
-    // console.log(" start", startNode);
-    for (let i = 0; i < word.length; i++) {
-        var sym = word[i];
-        currentNodes = nextState(graph, currentNodes, sym);
-        // console.log(" after ", sym, ":", currentNodes);
+    try {
+        let currentNodes = getStartNodes(graph);
+        // console.log("checkWord", word);
+        // console.log(" start", startNode);
+        for (let i = 0; i < word.length; i++) {
+            var sym = word[i];
+            currentNodes = nextState(graph, currentNodes, sym);
+            // console.log(" after ", sym, ":", currentNodes);
+        }
+        return currentNodes.some((node) => node.isAccepting);
+    } catch (e) {
+        console.log(e);
+        return false;
     }
-    return currentNodes.some((node) => node.isAccepting);
 }
 
 export function getReachableGraph(graph: Graph) {
@@ -203,6 +208,48 @@ export function getPowerGraph(graph: Graph) {
     console.log("powerlinks", powerLinks);
 
     return { nodes: powerNodes, links: powerLinks };
+}
+
+
+export function toLatex(graph: Graph) {
+
+    const quoteLabel = (label: string) => {
+        return label.replace(/_/g, "\\_").replace(/#/g, "\\#").replace("{", "\\{").replace("}", "\\}");
+    }
+
+    let str = `\\documentclass {article}
+
+\\usepackage {tikz}
+\\usetikzlibrary{automata,arrows}
+\\usetikzlibrary {positioning}
+\\begin {document}
+\\begin {center}
+\\begin {tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=5 cm, scale = 1, transform shape, initial text={}]
+`;
+    // [-latex ,auto ,node distance =4 cm and 5cm ,on grid, semithick]
+    str +=
+        graph.nodes.map((node: Node) => {
+            const pos = node.x && node.y ? `at (${(node.x / 50).toFixed(2)}, ${(node.y / 50).toFixed(2)})` : "";
+            return `\\node[${node.id === 0 ? "initial, " : ""}state${node.isAccepting ? ", accepting" : ""}] ${pos} (${node.id}) {${quoteLabel(node.label)}};`;
+        }
+        ).join("\n");
+    str += "\n";
+
+    str +=
+        graph.links.map((link: Link) =>
+        // link.from + " -> " + link.to + " [label=\"" + link.label + "\"]"
+        {
+            const label = link.label ? `node {${quoteLabel(link.label)}}` : "";
+            return `\\path (${link.from}) edge [${link.to === link.from ? "loop" : ""}] ${label} (${link.to});`;
+        }
+        ).join("\n");
+    str += "\n";
+
+    str += `\\end{tikzpicture}
+\\end{center}
+\\end{document}`;
+
+    return str;
 }
 
 

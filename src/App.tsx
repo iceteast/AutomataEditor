@@ -2,6 +2,8 @@ import * as go from 'gojs';
 import * as React from 'react';
 import { produce } from 'immer';
 
+import TextareaAutosize from '@mui/material/TextareaAutosize';
+import TextField from '@mui/material/TextField';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
@@ -25,14 +27,17 @@ import Popup from 'reactjs-popup';
 import 'reactjs-popup/dist/index.css';
 import Highlight from 'react-highlight';
 
+import lzbase62 from 'lzbase62';
+// import AmauiLZ77 from '@amaui/lz77';
+
 import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
 import './App.css';
 import { formats, nodeColor, nodeHighlightColor, startNodeShape } from './Const';
 import Info from './components/Info';
-import { getPowerGraph, getReachableGraph } from './GraphUtils';
-import { Format, Node as GraphNode } from "./Interfaces";
+import { getPowerGraph, getReachableGraph, toLatex } from './GraphUtils';
+import { Format, Graph, Node as GraphNode } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
 import createPersistedState from 'use-persisted-state';
@@ -323,7 +328,8 @@ function App() {
     );
   }, []);
 
-  const [formatStr, setFormatStr] = React.useState('');
+  // const [formatStr, setFormatStr] = React.useState('');
+  const [formatStr, setFormatStr] = createPersistedState<string>("format")('');
 
   const handleFormatChange = (event: SelectChangeEvent) => {
     setFormatStr(event.target.value as string);
@@ -332,17 +338,52 @@ function App() {
   const format = formats.find((f) => f.name === formatStr);
   const [copyText, setCopyText] = React.useState('');
   const [showCopyPopup, setShowCopyPopup] = React.useState(false);
+  const [importText, setImportText] = React.useState('');
+  const [showImportPopup, setShowImportPopup] = React.useState(false);
+  const [exportLanguage, setExportLanguage] = React.useState('javascript');
+
+  const importFromUrl = (searchParams: string) => {
+    const queryParams = new URLSearchParams(searchParams);
+    const enc = queryParams.get('graph');
+    if (enc) {
+      const json = lzbase62.decompress(enc);
+      return JSON.parse(json) as Graph;
+    }
+    return undefined;
+  };
+
+  React.useEffect(() => {
+    const graph = importFromUrl(window.location.search);
+    if (graph) {
+      updateModelWithGraph(graph, setNodeDataArray, setLinkDataArray);
+    }
+  }, []);
 
   const importGraph = () => {
-    // let new_graph = undefined;
-    // switch (format?.name) {
-    //   case 'JSON':
-
-    //     break;
-    //   default:
-    //     console.log("Not handled export format");
-    //     return;
-    // }
+    setShowImportPopup(false);
+    let new_graph = undefined;
+    switch (format?.name) {
+      case 'JSON':
+        new_graph = JSON.parse(importText) as Graph;
+        break;
+      case 'URL':
+        // const enc = importText.split('?graph=')[1];
+        new_graph = importFromUrl("?" + importText.split('?')[1]);
+        // const queryParams = new URLSearchParams("?" + importText.split('?')[1]);
+        // const enc = queryParams.get('graph');
+        // if (enc) {
+        //   const json = lzbase62.decompress(enc);
+        //   new_graph = JSON.parse(json) as Graph;
+        // }
+        break;
+      default:
+        console.log("Not handled export format");
+        return;
+    }
+    if (new_graph) {
+      updateModelWithGraph(new_graph, setNodeDataArray, setLinkDataArray);
+    }
+    // setShowImportPopup(true);
   };
 
   const exportGraph = () => {
@@ -350,6 +391,20 @@ function App() {
     switch (format?.name) {
       case 'JSON':
         output = JSON.stringify(graph, null, 2);
+        setExportLanguage("javascript");
+        break;
+      case 'URL':
+        const json = JSON.stringify(graph);
+        const enc = lzbase62.compress(json);
+        output = window.location.origin + window.location.pathname + "?graph=" + enc;
+        setExportLanguage("html");
+        // const enc = new AmauiLZ77(json).encode().value;
+        // console.log(enc);
+        // const b64 = compress(json, { level: 9 });
+        break;
+      case 'LaTeX':
+        output = toLatex(graph);
+        setExportLanguage("latex");
         break;
       default:
         console.log("Not handled export format");
@@ -413,7 +468,7 @@ function App() {
               color="primary"
               startIcon={<BackupIcon />}
               disabled={format ? !format.import : true}
-              onClick={importGraph}
+              onClick={() => setShowImportPopup(true)}
             >
               Import
             </Button>
@@ -500,81 +555,45 @@ function App() {
           <CodeBlock highlight={true} >
             <pre>
               {/* <Highlight className="language-javascript"> */}
-              <Highlight className='language-javascript'>
+              <Highlight className={"language-" + exportLanguage}>
                 {copyText}
               </Highlight>
             </pre>
           </CodeBlock>
         </div>
       </Popup>
+      <Popup open={showImportPopup} onClose={() => setShowImportPopup(false)} modal>
+        <div>
+
+          <Grid container direction="column" alignItems="center" spacing={2}>
+            <Grid item style={{ width: "100%" }}>
+              <TextField
+                id="filled-multiline-flexible"
+                label="Import String"
+                fullWidth
+                multiline
+                rows={6}
+                // style={{ width: "100%" }}
+                value={importText}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setImportText(event.target.value)}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<BackupIcon />}
+                onClick={importGraph}
+              >
+                Import
+              </Button>
+            </Grid>
+          </Grid>
+        </div>
+      </Popup>
 
 
-      {/* <Popup
-        trigger={<button className="button"> Open Modal </button>}
-        modal
-        contentStyle={contentStyle}
-      >
-        {close => (
-          <div className="modal">
-            <a className="close" onClick={close}>
-              &times;
-            </a>
-            <div className="header"> Modal Title </div>
-            <div className="content">
-              {" "}
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Atque, a
-              nostrum. Dolorem, repellat quidem ut, minima sint vel eveniet
-              quibusdam voluptates delectus doloremque, explicabo tempore dicta
-              adipisci fugit amet dignissimos?
-              <br />
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Consequatur
-              sit commodi beatae optio voluptatum sed eius cumque, delectus saepe
-              repudiandae explicabo nemo nam libero ad, doloribus, voluptas rem
-              alias. Vitae?
-            </div>
-            <div className="actions">
-              <Popup
-                trigger={<button className="button"> Menu Demo </button>}
-                position="top center"
-                closeOnDocumentClick
-                contentStyle={{ padding: "0px", border: "none" }}
-              >
-                <div className="menu">
-                  <div className="menu-item"> Menu item 1</div>
-                  <div className="menu-item"> Menu item 2</div>
-                  <div className="menu-item"> Menu item 3</div>
-                  <Popup
-                    trigger={<div className="menu-item"> sup Menu </div>}
-                    position="right top"
-                    on="hover"
-                    closeOnDocumentClick
-                    mouseLeaveDelay={300}
-                    mouseEnterDelay={0}
-                    contentStyle={{ padding: "0px", border: "none" }}
-                    arrow={false}
-                  >
-                    <div className="menu">
-                      <div className="menu-item"> item 1</div>
-                      <div className="menu-item"> item 2</div>
-                      <div className="menu-item"> item 3</div>
-                    </div>
-                  </Popup>
-                  <div className="menu-item"> Menu item 4</div>
-                </div>
-              </Popup>
-              <button
-                className="button"
-                onClick={() => {
-                  console.log("modal closed ");
-                  close();
-                }}
-              >
-                close modal
-              </button>
-            </div>
-          </div>
-        )}
-      </Popup> */}
 
 
 
