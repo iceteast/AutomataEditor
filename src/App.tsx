@@ -36,7 +36,7 @@ import { SelectionInspector } from './graphComponents/SelectionInspector';
 import './App.css';
 import { formats, nodeColor, nodeHighlightColor, startNodeShape } from './Const';
 import Info from './components/Info';
-import { getPowerGraph, getReachableGraph, toLatex } from './GraphUtils';
+import { fiveTuple, getPowerGraph, getReachableGraph, toLatex } from './GraphUtils';
 import { Format, Graph, Node as GraphNode } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
@@ -311,22 +311,22 @@ function App() {
     updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
   };
 
-  React.useEffect(() => {
-    updateModelWithGraph(
-      {
-        nodes: [
-          { id: 0, label: "Start", isAccepting: false },
-          { id: 1, label: "A", isAccepting: true },
-        ],
-        links: [
-          { from: 0, to: 1, label: "a" },
-          { from: 1, to: 1, label: "b" },
-        ],
-      },
-      setNodeDataArray,
-      setLinkDataArray
-    );
-  }, []);
+  // React.useEffect(() => {
+  //   updateModelWithGraph(
+  //     {
+  //       nodes: [
+  //         { id: 0, label: "Start", isAccepting: false },
+  //         { id: 1, label: "A", isAccepting: true },
+  //       ],
+  //       links: [
+  //         { from: 0, to: 1, label: "a" },
+  //         { from: 1, to: 1, label: "b" },
+  //       ],
+  //     },
+  //     setNodeDataArray,
+  //     setLinkDataArray
+  //   );
+  // }, []);
 
   // const [formatStr, setFormatStr] = React.useState('');
   const [formatStr, setFormatStr] = createPersistedState<string>("format")('');
@@ -405,6 +405,10 @@ function App() {
       case 'LaTeX':
         output = toLatex(graph);
         setExportLanguage("latex");
+        break;
+      case '5-Tuple':
+        output = fiveTuple(graph);
+        setExportLanguage("text");
         break;
       default:
         console.log("Not handled export format");

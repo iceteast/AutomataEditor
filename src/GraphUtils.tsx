@@ -1,4 +1,4 @@
-import { ascii, separator } from "./Const";
+import { ascii, epsilon, separator } from "./Const";
 import { Graph, Link, Node } from "./Interfaces";
 
 
@@ -254,6 +254,25 @@ export function toLatex(graph: Graph) {
 \\end{document}`;
 
     return str;
+}
+
+export function fiveTuple(graph: Graph) {
+    const alphabet = Array.from(getAlphabet(graph));
+    const start = getStart(graph);
+    const accept = graph.nodes.filter((node: Node) => node.isAccepting);
+    const states = graph.nodes;
+    const transitions = graph.links;
+
+    const labelById = (id: number) => {
+        return states.find((node: Node) => node.id === id)!.label;
+    }
+
+    return `M=(Q,Σ,δ,q₀,F)
+Q = {${states.map((node: Node) => node.label).join(", ")}}
+Σ = {${alphabet.join(", ")}}
+δ = {${transitions.map((link: Link) => `(${labelById(link.from)}, ${isEpsilon(link.label) ? epsilon : link.label}) -> ${labelById(link.to)}`).join(", ")}}
+q₀ = ${start.label}
+F = {${accept.map((node: Node) => node.label).join(", ")}}`;
 }
 
 
