@@ -1,6 +1,11 @@
 import { ascii, epsilon, separator } from "./Const";
 import { Graph, Link, Node } from "./Interfaces";
+import toRegex from "./RegEx/regex";
+import State from "./RegEx/state";
+// import { DFA } from "./RegEx2/DFS";
+import regParser from "automata.js";
 
+// import DFA from "regex-to-dfa";
 
 export function labelAcceptsSymbol(symbol: string, label: string | undefined): boolean {
     // if (label === "") {
@@ -174,7 +179,13 @@ export function getPowerGraph(graph: Graph) {
 
     const startNode = getStart(graph);
 
-    const setToId = (subset: Node[], i: number) => (subset.length === 1 && subset[0].id === startNode.id ? 0 : i + 1);
+    const newStart = closeStateEpsilon(graph, [startNode]);
+
+    const isNewStart = (nodes: Node[]) => {
+        return nodeSetIdx(nodes) === nodeSetIdx(newStart);
+    };
+
+    const setToId = (subset: Node[], i: number) => (isNewStart(subset) ? 0 : i + 1);
 
     const alphabet = getAlphabet(graph);
 
@@ -276,10 +287,271 @@ F = {${accept.map((node: Node) => node.label).join(", ")}}`;
 }
 
 
+
+export function toRegEx(graph: Graph) {
+    // we use javascript regex notation
+    // conversion algorithmus: Arden's rule (not the one from the script)
+    // both algorithms are equivalent and quite similar (you can even transform one into the other by reordering (commutativity + associativity) of the proof steps)
+    // Reference: https://cs.stackexchange.com/a/2392
+
+    // used library: https://github.com/devongovett/regexgen
+
+
+    // expects DFA
+
+    const stateMap = new Map<Number, State>();
+    const start = getStart(graph);
+
+    graph.nodes.forEach((node: Node) => {
+        const state = new State();
+        state.accepting = node.isAccepting;
+        stateMap.set(node.id, state);
+    });
+
+    graph.links.forEach((link: Link) => {
+        const from = stateMap.get(link.from)!;
+        const to = stateMap.get(link.to)!;
+        from.transitions.set(link.label, to);
+    });
+
+    console.log("stateMap", stateMap.get(start.id)!);
+
+    const regex = toRegex(stateMap.get(start.id)!, "");
+    return regex;
+    // return "";
+}
+
+
+export function ofRegEx(regex: string) {
+    // used library: https://github.com/hokein/Automata.js
+
+    var parser = new regParser.RegParser(regex);
+    var fsm = parser.parseToDFA();
+
+    console.log("dfa", fsm);
+
+    const numToId = new Map();
+
+    const nodes = [];
+    for (let i = 0; i < fsm.numOfStates; i++) {
+        const i_str = i.toString();
+        const id =
+            fsm.initialState === i_str ? 0 :
+                i + 1;
+        numToId.set(i_str, id);
+        const label = i_str;
+        const isAccepting = fsm.acceptStates.includes(i_str);
+        nodes.push({ id: id, label: label, isAccepting: isAccepting });
+    }
+
+    const links = [];
+
+    for (var from_id in fsm.transitions) {
+        for (var to_id in fsm.transitions[from_id]) {
+            const from = numToId.get(from_id)!;
+            const to = numToId.get(to_id)!;
+            const label = fsm.transitions[from_id][to_id];
+            links.push({ from: from, to: to, label: label });
+            // transitionDotScript += '  ' + [from_id] + '->' + to_id + ' [label="' +
+            //     escapeCharacter(fsm.transitions[from_id][to_id]) + '"];\n';
+        }
+    }
+
+    console.log("nodes", nodes);
+    console.log("links", links);
+
+    // used library: https://github.com/Thijsvanede/dfa#readme
+
+    // const dfa = new DFA(new RegExp(regex), "I");
+
+    // console.log(dfa);
+    // console.log(dfa.initial);
+    // return undefined;
+
+    return { nodes: nodes, links: links };
+}
+
+function nameFromId(graph: Graph, id: number) {
+    return graph.nodes.find((node: Node) => node.id === id)!.label;
+}
+
+
+// TODO: debug
+export function minimize(graph: Graph) {
+    // Hopcroft's algorithm
+
+    const alphabet = Array.from(getAlphabet(graph));
+    const start = getStart(graph);
+
+    const T: Set<string> = new Set();
+    const L: [number, number][] = [];
+    graph.nodes.forEach((node: Node) => {
+        graph.nodes.forEach((node2: Node) => {
+            if (node.id === start.id) return;
+            if (node.id < node2.id) {
+                return;
+            }
+            if (node.isAccepting !== node2.isAccepting) {
+                L.push([node.id, node2.id]);
+            } else {
+                T.add(node.id.toString() + ", " + node2.id.toString());
+            }
+        });
+    });
+
+    while (L.length > 0) {
+        const [a, b] = L.pop()!;
+        console.log("look at distinguished pair", nameFromId(graph, a), nameFromId(graph, b));
+        for (const c of alphabet) {
+            const prev_a = graph.links.filter((link: Link) => link.to === a && link.label === c).map((link: Link) => link.from);
+            const prev_b = graph.links.filter((link: Link) => link.to === b && link.label === c).map((link: Link) => link.from);
+            for (const x of prev_a) {
+                for (const y of prev_b) {
+                    console.log("  found prev", nameFromId(graph, x), nameFromId(graph, y));
+                    const pair = x.toString() + ", " + y.toString();
+                    if (T.has(pair)) {
+                        console.log("  found distinguished", nameFromId(graph, x), nameFromId(graph, y));
+                        T.delete(pair);
+                        L.push([x, y]);
+                    }
+                }
+            }
+        }
+    }
+
+
+    graph.nodes.forEach((node: Node) => {
+        const pair = node.id.toString() + ", " + node.id.toString();
+        if (T.has(pair)) {
+            T.delete(pair);
+        }
+    });
+
+    console.log("T", T);
+
+    const nodes = graph.nodes.filter((node: Node) => {
+        for (const s of Array.from(T)) {
+            if (s.startsWith(node.id.toString() + ", ")) {
+                return false;
+            }
+        }
+        return true;
+    });
+
+    const links = graph.links.filter((link: Link) => {
+        for (const s of Array.from(T)) {
+            if (s.startsWith(link.from.toString() + ", ")) {
+                return false;
+            }
+        }
+        return true;
+    }
+    ).map((link: Link) => {
+        for (const s of Array.from(T)) {
+            if (s.startsWith(link.to.toString() + ", ")) {
+                const b = parseInt(s.split(", ")[1]);
+                return {
+                    ...link,
+                    to: b
+                } as Link;
+            }
+        }
+        return link;
+    });
+
+    return { nodes: nodes, links: links };
+    // console.log("nodes", nodes);
+    // console.log("links", links);
+
+    // return undefined;
+
+    // const (a, b) = L.pop()!;
+    // for(const c of alphabet) {
+    //     const x = graph.links.find((link: Link) => link.from === a && link.label === c);
+    //     const y = graph.links.find((link: Link) => link.from === b && link.label === c);
+    //     if(x && y) {
+    //         const x_id = x.to;
+    //         const y_id = y.to;
+    //         if(!T.has([x_id, y_id])) {
+    //             T.add([x_id, y_id]);
+    //             L.push([x_id, y_id]);
+    //         }
+    //     }
+    // }
+}
+
+function freshId(graph: Graph) {
+    let id = 0;
+    while (graph.nodes.find((node: Node) => node.id === id)) {
+        id++;
+    }
+    return id;
+}
+
+export function reverseGraph(graph: Graph) {
+    // Brzozowski's algorithm
+    const start = getStart(graph);
+
+    const oldStart = {
+        ...start,
+        id: freshId(graph),
+        isAccepting: true
+    };
+
+    const newStart = {
+        id: 0,
+        label: "start",
+        isAccepting: false
+    };
+
+    const nodes = [
+        ...graph.nodes.filter((node: Node) => node.id !== start.id).map(
+            (node: Node) => {
+                return {
+                    ...node,
+                    isAccepting: false
+                };
+            }
+        )
+        , oldStart, newStart];
+
+    const links = graph.links.map(
+        (link: Link) => {
+            const new_to = link.to === start.id ? oldStart.id : link.to;
+            const new_from = link.from === start.id ? oldStart.id : link.from;
+            return {
+                ...link,
+                to: new_to,
+                from: new_from
+            } as Link;
+        })
+        .map((link: Link) => {
+            return {
+                ...link,
+                from: link.to,
+                to: link.from
+            } as Link;
+        }).concat(
+            graph.nodes.filter(node => node.isAccepting).map((node: Node) => {
+                return {
+                    from: newStart.id,
+                    to: node.id === start.id ? oldStart.id : node.id,
+                    label: epsilon
+                } as Link;
+            })
+        );
+
+    return { nodes: nodes, links: links };
+}
+
+
+
+
+
 // TODO: make atomic links
 
 // TODO: login via cms (Discourse SSO) or github/google (OAuth)
 
 
-
-
+// TODO: make explicit where DFA is required (e.g. regex generation)
+//   make DFA (temporary)

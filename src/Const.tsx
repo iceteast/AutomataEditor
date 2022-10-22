@@ -11,26 +11,31 @@ export const formats: Format[] = [
     {
         name: "JSON",
         import: true,
-        export: true
+        export: true,
+        adminOnly: false,
     },
     {
         name: "URL",
         import: true,
-        export: true
+        export: true,
+        adminOnly: false,
     },
     {
         name: "RegEx",
-        import: false, // TODO: for now
-        export: false // TODO: for now
+        import: true,
+        export: true,
+        adminOnly: true,
     },
     {
         name: "5-Tuple",
         import: false, // TODO: for now
-        export: true // TODO:
+        export: true, // TODO:
+        adminOnly: false,
     },
     {
         name: "LaTeX",
         import: false,
-        export: true // TODO:
+        export: true, // TODO:
+        adminOnly: false,
     },
 ]

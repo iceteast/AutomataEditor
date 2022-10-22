@@ -2,6 +2,7 @@ export interface Format {
     name: "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL";
     import: boolean;
     export: boolean;
+    adminOnly: boolean;
 }
 
 export interface Graph {

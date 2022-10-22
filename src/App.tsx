@@ -36,7 +36,7 @@ import { SelectionInspector } from './graphComponents/SelectionInspector';
 import './App.css';
 import { formats, nodeColor, nodeHighlightColor, startNodeShape } from './Const';
 import Info from './components/Info';
-import { fiveTuple, getPowerGraph, getReachableGraph, toLatex } from './GraphUtils';
+import { fiveTuple, getPowerGraph, getReachableGraph, minimize, ofRegEx, reverseGraph, toLatex, toRegEx } from './GraphUtils';
 import { Format, Graph, Node as GraphNode } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
@@ -320,6 +320,26 @@ function App() {
     updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
   };
 
+  const minimizeAutomaton = () => {
+    if (!admin) {
+      return;
+    }
+    const newGraph = minimize(graph);
+    if (newGraph) {
+      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
+    }
+  }
+
+  const reverseAutomaton = () => {
+    if (!admin) {
+      return;
+    }
+    const newGraph = reverseGraph(graph);
+    if (newGraph) {
+      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
+    }
+  };
+
   // React.useEffect(() => {
   //   updateModelWithGraph(
   //     {
@@ -382,6 +402,13 @@ function App() {
 
   const importGraph = () => {
     setShowImportPopup(false);
+
+    if (format?.adminOnly && !admin) {
+      setCopyText("Admin only");
+      setShowCopyPopup(true);
+      return;
+    }
+
     let new_graph = undefined;
     switch (format?.name) {
       case 'JSON':
@@ -397,6 +424,9 @@ function App() {
         //   new_graph = JSON.parse(json) as Graph;
         // }
         break;
+      case 'RegEx':
+        new_graph = ofRegEx(importText);
+        break;
       default:
         console.log("Not handled export format");
         return;
@@ -409,31 +439,39 @@ function App() {
 
   const exportGraph = () => {
     let output = "";
-    switch (format?.name) {
-      case 'JSON':
-        output = JSON.stringify(graph, null, 2);
-        setExportLanguage("javascript");
-        break;
-      case 'URL':
-        const json = JSON.stringify(graph);
-        const enc = lzbase62.compress(json);
-        output = window.location.origin + window.location.pathname + "?graph=" + enc;
-        setExportLanguage("html");
-        // const enc = new AmauiLZ77(json).encode().value;
-        // console.log(enc);
-        // const b64 = compress(json, { level: 9 });
-        break;
-      case 'LaTeX':
-        output = toLatex(graph);
-        setExportLanguage("latex");
-        break;
-      case '5-Tuple':
-        output = fiveTuple(graph);
-        setExportLanguage("text");
-        break;
-      default:
-        console.log("Not handled export format");
-        return;
+    if (format?.adminOnly && !admin) {
+      output = "Admin only";
+    } else {
+      switch (format?.name) {
+        case 'JSON':
+          output = JSON.stringify(graph, null, 2);
+          setExportLanguage("javascript");
+          break;
+        case 'URL':
+          const json = JSON.stringify(graph);
+          const enc = lzbase62.compress(json);
+          output = window.location.origin + window.location.pathname + "?graph=" + enc;
+          setExportLanguage("html");
+          // const enc = new AmauiLZ77(json).encode().value;
+          // console.log(enc);
+          // const b64 = compress(json, { level: 9 });
+          break;
+        case 'LaTeX':
+          output = toLatex(graph);
+          setExportLanguage("latex");
+          break;
+        case '5-Tuple':
+          output = fiveTuple(graph);
+          setExportLanguage("text");
+          break;
+        case 'RegEx':
+          output = toRegEx(graph);
+          setExportLanguage("regex");
+          break;
+        default:
+          console.log("Not handled export format");
+          return;
+      }
     }
     setCopyText(output);
     setShowCopyPopup(true);
@@ -479,7 +517,9 @@ function App() {
                 <MenuItem value={20}>Twenty</MenuItem>
                 <MenuItem value={30}>Thirty</MenuItem> */}
                 {
-                  formats.map((format: Format) => {
+                  formats.filter(
+                    (f) => admin || !f.adminOnly
+                  ).map((format: Format) => {
                     return <MenuItem value={format.name}>{format.name}</MenuItem>
                   })
                 }
@@ -559,6 +599,30 @@ function App() {
                 onClick={powerAutomaton}
               >
                 Power Automaton
+              </Button>
+            </Grid>
+          }
+          {admin &&
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<BoltIcon />}
+                onClick={minimizeAutomaton}
+              >
+                Minimize
+              </Button>
+            </Grid>
+          }
+          {admin &&
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<BoltIcon />}
+                onClick={reverseAutomaton}
+              >
+                Reverse
               </Button>
             </Grid>
           }
