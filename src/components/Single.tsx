@@ -26,7 +26,7 @@ interface SingleProp {
 }
 
 
-function Single({ graph, colorNodes: colorFun }: SingleProp) {
+function Single({ graph, colorNodes }: SingleProp) {
 
     // const [word, setWord] = React.useState('');
     const [word, setWord] = createPersistedState<string>('word')('');
@@ -36,26 +36,26 @@ function Single({ graph, colorNodes: colorFun }: SingleProp) {
     // const [wordTrace, setWordTrace] = React.useState<JSX.Element>();
 
     const removeColor = () => {
-        colorFun([]);
+        colorNodes([]);
         // nodeArray.forEach((node) => {
         //     node.color = nodeColor;
         // });
     };
 
-    const colorNodes = (nodes: Node[]) => {
-        // removeColor();
-        // console.log("coloring ", nodes);
-        // console.log(" to ", nodeHighlightColor);
-        // console.log("coloring " + [...currentNodes]);
-        colorFun(nodes);
-        // nodeArray.forEach((node) => {
-        //     if (nodes.find((cNode) => cNode.id === node.key)) {
-        //         node.color = nodeHighlightColor;
-        //         console.log("Set color of " + node.key + " label: " + node.text);
-        //     }
-        // });
-        // console.log("nodeArray: ", nodeArray);
-    };
+    // const colorNodes = (nodes: Node[]) => {
+    //     // removeColor();
+    //     // console.log("coloring ", nodes);
+    //     // console.log(" to ", nodeHighlightColor);
+    //     // console.log("coloring " + [...currentNodes]);
+    //     colorFun(nodes);
+    //     // nodeArray.forEach((node) => {
+    //     //     if (nodes.find((cNode) => cNode.id === node.key)) {
+    //     //         node.color = nodeHighlightColor;
+    //     //         console.log("Set color of " + node.key + " label: " + node.text);
+    //     //     }
+    //     // });
+    //     // console.log("nodeArray: ", nodeArray);
+    // };
 
     const resetSimulation = () => {
         setCurrentNodes([]);

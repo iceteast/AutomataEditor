@@ -2,13 +2,16 @@ import { ascii, separator } from "./Const";
 import { Graph, Link, Node } from "./Interfaces";
 
 
-export function labelAcceptsSymbol(symbol: string, label: string): boolean {
+export function labelAcceptsSymbol(symbol: string, label: string | undefined): boolean {
     // if (label === "") {
     //     return true;
     // }
-    if (!label) {
-        return true;
+    if (label === undefined) {
+        return false;
     }
+    // if (label === undefined) {
+    //     return true;
+    // }
     // now the separator is valid regex
     // if (label.includes(separator) && label !== separator) {
     //     const labels = label.split(separator);
@@ -54,6 +57,7 @@ export function nextState(graph: Graph, currentState: Node[], symbol: string): N
         }
     });
     return closeStateEpsilon(graph, nextStates);
+    // return nextStates;
 }
 
 export function getStart(graph: Graph): Node {
