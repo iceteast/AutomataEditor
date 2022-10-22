@@ -18,6 +18,13 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 
+// import { CopyToClipboard } from 'react-copy-to-clipboard';
+// import Copy from 'react-copy';
+import CodeBlock from 'react-copy-code';
+import Popup from 'reactjs-popup';
+import 'reactjs-popup/dist/index.css';
+import Highlight from 'react-highlight';
+
 import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
@@ -323,11 +330,33 @@ function App() {
   };
 
   const format = formats.find((f) => f.name === formatStr);
+  const [copyText, setCopyText] = React.useState('');
+  const [showCopyPopup, setShowCopyPopup] = React.useState(false);
 
   const importGraph = () => {
+    // let new_graph = undefined;
+    // switch (format?.name) {
+    //   case 'JSON':
+
+    //     break;
+    //   default:
+    //     console.log("Not handled export format");
+    //     return;
+    // }
   };
 
   const exportGraph = () => {
+    let output = "";
+    switch (format?.name) {
+      case 'JSON':
+        output = JSON.stringify(graph, null, 2);
+        break;
+      default:
+        console.log("Not handled export format");
+        return;
+    }
+    setCopyText(output);
+    setShowCopyPopup(true);
   };
 
   return (
@@ -463,6 +492,92 @@ function App() {
       <div>
         {singleMulti === 'single' ? <Single graph={graph} colorNodes={colorNodes} /> : <Multi graph={graph} />}
       </div>
+
+
+      {/* <Popup trigger={<button> Trigger</button>} modal> */}
+      <Popup open={showCopyPopup} onClose={() => setShowCopyPopup(false)} modal>
+        <div>
+          <CodeBlock highlight={true} >
+            <pre>
+              {/* <Highlight className="language-javascript"> */}
+              <Highlight className='language-javascript'>
+                {copyText}
+              </Highlight>
+            </pre>
+          </CodeBlock>
+        </div>
+      </Popup>
+
+
+      {/* <Popup
+        trigger={<button className="button"> Open Modal </button>}
+        modal
+        contentStyle={contentStyle}
+      >
+        {close => (
+          <div className="modal">
+            <a className="close" onClick={close}>
+              &times;
+            </a>
+            <div className="header"> Modal Title </div>
+            <div className="content">
+              {" "}
+              Lorem ipsum dolor sit amet consectetur adipisicing elit. Atque, a
+              nostrum. Dolorem, repellat quidem ut, minima sint vel eveniet
+              quibusdam voluptates delectus doloremque, explicabo tempore dicta
+              adipisci fugit amet dignissimos?
+              <br />
+              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Consequatur
+              sit commodi beatae optio voluptatum sed eius cumque, delectus saepe
+              repudiandae explicabo nemo nam libero ad, doloribus, voluptas rem
+              alias. Vitae?
+            </div>
+            <div className="actions">
+              <Popup
+                trigger={<button className="button"> Menu Demo </button>}
+                position="top center"
+                closeOnDocumentClick
+                contentStyle={{ padding: "0px", border: "none" }}
+              >
+                <div className="menu">
+                  <div className="menu-item"> Menu item 1</div>
+                  <div className="menu-item"> Menu item 2</div>
+                  <div className="menu-item"> Menu item 3</div>
+                  <Popup
+                    trigger={<div className="menu-item"> sup Menu </div>}
+                    position="right top"
+                    on="hover"
+                    closeOnDocumentClick
+                    mouseLeaveDelay={300}
+                    mouseEnterDelay={0}
+                    contentStyle={{ padding: "0px", border: "none" }}
+                    arrow={false}
+                  >
+                    <div className="menu">
+                      <div className="menu-item"> item 1</div>
+                      <div className="menu-item"> item 2</div>
+                      <div className="menu-item"> item 3</div>
+                    </div>
+                  </Popup>
+                  <div className="menu-item"> Menu item 4</div>
+                </div>
+              </Popup>
+              <button
+                className="button"
+                onClick={() => {
+                  console.log("modal closed ");
+                  close();
+                }}
+              >
+                close modal
+              </button>
+            </div>
+          </div>
+        )}
+      </Popup> */}
+
+
+
       {/* {inspector} */}
     </div>
   );

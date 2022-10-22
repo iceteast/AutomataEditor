@@ -24,8 +24,13 @@ export const formats: Format[] = [
         export: true // TODO:
     },
     {
-        name: "Tex",
+        name: "LaTeX",
         import: false,
         export: true // TODO:
+    },
+    {
+        name: "URL",
+        import: true,
+        export: true
     }
 ]
