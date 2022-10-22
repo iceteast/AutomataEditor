@@ -15,6 +15,7 @@ function Info() {
                         <li>Right click to mark a state as accepting</li>
                         <li>Double click or use F2 to give a label to a link</li>
                         <li>Either use multiple links or '{separator}' (e.g. "2{separator}3")</li>
+                        <li>Do not open multiple instances of this website at once!</li>
                     </ul>
                 </p>
             </Collapsible>
