@@ -47,7 +47,7 @@ import { convertToGraph, updateModelWithGraph } from './GraphConversion';
 
 function App() {
 
-  const admin = true;
+
 
 
   const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(
@@ -350,6 +350,17 @@ function App() {
   const [importText, setImportText] = React.useState('');
   const [showImportPopup, setShowImportPopup] = React.useState(false);
   const [exportLanguage, setExportLanguage] = React.useState('javascript');
+
+  const [admin, setAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const pwd = queryParams.get('pwd');
+    if (pwd === 'ti_admin') {
+      setAdmin(true);
+    }
+  }, []);
+
 
   const importFromUrl = (searchParams: string) => {
     const queryParams = new URLSearchParams(searchParams);
