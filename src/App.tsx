@@ -1,6 +1,8 @@
 import * as go from 'gojs';
 import * as React from 'react';
-import { produce } from 'immer';
+// import { produce } from 'immer';
+// import bcrypt from 'bcrypt';
+import pbkdf2 from 'pbkdf2';
 
 import TextareaAutosize from '@mui/material/TextareaAutosize';
 import TextField from '@mui/material/TextField';
@@ -34,7 +36,7 @@ import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
 import './App.css';
-import { formats, nodeColor, nodeHighlightColor, startNodeShape } from './Const';
+import { formats, nodeColor, nodeHighlightColor, pwd_hash, startNodeShape } from './Const';
 import Info from './components/Info';
 import { fiveTuple, getPowerGraph, getReachableGraph, minimize, ofRegEx, reverseGraph, toLatex, toRegEx } from './GraphUtils';
 import { Format, Graph, Node as GraphNode } from "./Interfaces";
@@ -373,12 +375,54 @@ function App() {
 
   const [admin, setAdmin] = React.useState(false);
 
+  const hash = (str: string, callback: (err: Error, derivedKey: Buffer) => void) => {
+    pbkdf2.pbkdf2(
+      str,
+      'aZN00cGoN1XgYcArVhIz',
+      10000,
+      64,
+      'sha512',
+      callback
+      // (err: any, derivedKey: any) => {
+      //   if (err) {
+      //     setStatusText(err);
+      //     setLoading(false);
+      //     return;
+      //   }
+      //   const hash = derivedKey.toString('hex');
+      //   console.log("hash", hash);
+      //   // setStatusText('Hash generated!');
+      //   handleHash(hash);
+      //   setLoading(false);
+      // }
+    );
+  };
+
   React.useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const pwd = queryParams.get('pwd');
-    // TODO: use hash function here (see password check repo)
-    if (pwd === 'ti_admin') {
-      setAdmin(true);
+    const toHash = queryParams.get('hash');
+    if (toHash) {
+      hash(
+        toHash,
+        (err: Error, derivedKey: Buffer) => {
+          if (err) return;
+          const hash = derivedKey.toString('hex');
+          console.log("hash", hash);
+        }
+      );
+    }
+
+    if (pwd) {
+      hash(
+        pwd,
+        (err: Error, derivedKey: Buffer) => {
+          if (err) return;
+          const hash = derivedKey.toString('hex');
+          if (hash === pwd_hash)
+            setAdmin(true);
+        }
+      );
     }
   }, []);
 

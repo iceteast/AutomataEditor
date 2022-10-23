@@ -4,7 +4,7 @@ const regenerate = require('regenerate');
 /**
  * Represents an alternation (e.g. `foo|bar`)
  */
-class Alternation {
+export class Alternation {
     constructor(...options) {
         this.precedence = 1;
         this.options = this.flatten(options);
@@ -29,7 +29,7 @@ class Alternation {
 /**
  * Represents a character class (e.g. [0-9a-z])
  */
-class CharClass {
+export class CharClass {
     constructor(a, b) {
         this.precedence = 1;
         this.set = regenerate(a, b);
@@ -61,7 +61,7 @@ class CharClass {
 /**
  * Represents a concatenation (e.g. `foo`)
  */
-class Concatenation {
+export class Concatenation {
     constructor(a, b) {
         this.precedence = 2;
         this.a = a;
@@ -103,7 +103,7 @@ class Concatenation {
 /**
  * Represents a repetition (e.g. `a*` or `a?`)
  */
-class Repetition {
+export class Repetition {
     constructor(expr, type) {
         this.precedence = 3;
         this.expr = expr;
@@ -122,7 +122,7 @@ class Repetition {
 /**
  * Represents a literal (e.g. a string)
  */
-class Literal {
+export class Literal {
     constructor(value) {
         this.precedence = 2;
         this.value = value;
@@ -183,8 +183,8 @@ function parens(exp, parent, flags) {
     return str;
 }
 
-exports.Alternation = Alternation;
-exports.CharClass = CharClass;
-exports.Concatenation = Concatenation;
-exports.Repetition = Repetition;
-exports.Literal = Literal;
+// exports.Alternation = Alternation;
+// exports.CharClass = CharClass;
+// exports.Concatenation = Concatenation;
+// exports.Repetition = Repetition;
+// exports.Literal = Literal;

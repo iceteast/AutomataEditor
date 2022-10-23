@@ -107,15 +107,6 @@ function Single({ graph, colorNodes }: SingleProp) {
         setCurrentNodes(newNodes);
 
         colorNodes(newNodes);
-        // showWordTrace();
-        // console.log("TODO: handleNext");
-        // if (currentNodes.length === 0) {
-        //     setCurrentNodes(graph.startNodes);
-        // } else {
-        //     setCurrentNodes(
-        //         nextState(graph, currentNodes, word[iterPos])
-        //     );
-        // }
     };
 
     const handlePrev = (event: React.MouseEvent<HTMLButtonElement>) => {
