@@ -3,7 +3,7 @@
  * the constructor to initialize undefined properties when they
  * are first retrieved.
  */
-class DefaultMap extends Map {
+export class DefaultMap extends Map {
     constructor(iterable, defaultGetter) {
         if (typeof iterable === 'function') {
             defaultGetter = iterable;
@@ -25,4 +25,4 @@ class DefaultMap extends Map {
     }
 }
 
-module.exports = DefaultMap;
+// module.exports = DefaultMap;

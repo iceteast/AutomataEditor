@@ -1,9 +1,9 @@
-const Map = require('./map');
+const { DefaultMap: Map } = require('./map');
 
 /**
  * Represents a state in a DFA.
  */
-class State {
+export class State {
     constructor() {
         this.accepting = false;
         this.transitions = new Map(k => new State());
@@ -24,4 +24,4 @@ class State {
     }
 }
 
-module.exports = State;
+// module.exports = State;

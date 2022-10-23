@@ -9,7 +9,7 @@ const { Alternation, CharClass, Concatenation, Repetition, Literal } = require('
  * @param {string} flags - The flags to add to the regex.
  * @return {String} - the converted regular expression pattern
  */
-function toRegex(root, flags) {
+export function toRegex(root, flags) {
     let states = Array.from(root.visit());
     console.log(states);
 
@@ -182,4 +182,4 @@ function concat(a, b) {
     return new Concatenation(a, b);
 }
 
-module.exports = toRegex;
+// module.exports = toRegex;

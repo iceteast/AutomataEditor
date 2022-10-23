@@ -1,7 +1,7 @@
 import { ascii, epsilon, separator } from "./Const";
 import { Graph, Link, Node } from "./Interfaces";
-import toRegex from "./RegEx/regex";
-import State from "./RegEx/state";
+import { toRegex } from "./RegEx/regex";
+import { State } from "./RegEx/state";
 // import { DFA } from "./RegEx2/DFS";
 import regParser from "automata.js";
 
