@@ -544,6 +544,43 @@ export function reverseGraph(graph: Graph) {
     return { nodes: nodes, links: links };
 }
 
+function labelStr(link: Link) {
+    return isEpsilon(link.label) ? epsilon : link.label;
+}
+
+
+export function graphToGrammar(graph: Graph) {
+    // V non-terminals
+    // Sigma terminals
+    // P production 
+    // S start symbol
+
+    const V = "{" + graph.nodes.map((node: Node) => node.label).join(", ") + "}";
+    const Sigma = "{" + Array.from(getAlphabet(graph)).join(", ") + "}";
+    const start = getStart(graph);
+    const S = start.label;
+    const P =
+        graph.nodes.map((node: Node) => {
+            const links = graph.links.filter((link: Link) => link.from === node.id);
+            const productions = links.map((link: Link) => {
+                return labelStr(link) + " " + nameFromId(graph, link.to);
+            }).concat(
+                links.filter((link: Link) => graph.nodes.find((node: Node) => node.id === link.to && node.isAccepting)).map(labelStr)
+            );
+            return node.label + " -> " + productions.join(" | ") + (
+                node.isAccepting && node.id === start.id ? " | " + epsilon : ""
+            );
+        }).join("\n");
+
+    return ` L = (V, ${Sigma}, S, P) 
+V = ${V}
+Sigma = ${Sigma}
+S = ${S}
+P =
+${P}
+`
+
+}
 
 
 

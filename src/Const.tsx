@@ -8,6 +8,7 @@ export const nodeShape = "Ellipse";
 export const startNodeShape = "StartNodeRectangle";
 export const separator = "|"; // ";"
 export const epsilon = "ε";
+export const Sigma = "Σ";
 export const ascii = Array.from(Array(128).keys()).map((i) => String.fromCharCode(i)).join("");
 export const formats: Format[] = [
     {
@@ -30,14 +31,21 @@ export const formats: Format[] = [
     },
     {
         name: "5-Tuple",
-        import: false, // TODO: for now
-        export: true, // TODO:
+        import: false, // TODO: 
+        export: true,
         adminOnly: false,
     },
     {
         name: "LaTeX",
         import: false,
-        export: true, // TODO:
+        export: true,
         adminOnly: false,
     },
+    {
+        name: "Grammar",
+        import: false, // TODO:
+        export: true, // TODO:
+        adminOnly: true,
+    },
+    // TODO: dot / graphviz
 ]

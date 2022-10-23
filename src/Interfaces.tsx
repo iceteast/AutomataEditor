@@ -1,5 +1,5 @@
 export interface Format {
-    name: "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL";
+    name: "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL" | "Grammar";
     import: boolean;
     export: boolean;
     adminOnly: boolean;

@@ -38,7 +38,7 @@ import { SelectionInspector } from './graphComponents/SelectionInspector';
 import './App.css';
 import { formats, nodeColor, nodeHighlightColor, pwd_hash, startNodeShape } from './Const';
 import Info from './components/Info';
-import { fiveTuple, getPowerGraph, getReachableGraph, minimize, ofRegEx, reverseGraph, toLatex, toRegEx } from './GraphUtils';
+import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, minimize, ofRegEx, reverseGraph, toLatex, toRegEx } from './GraphUtils';
 import { Format, Graph, Node as GraphNode } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
@@ -511,6 +511,10 @@ function App() {
         case 'RegEx':
           output = toRegEx(graph);
           setExportLanguage("regex");
+          break;
+        case 'Grammar':
+          output = graphToGrammar(graph);
+          setExportLanguage("text");
           break;
         default:
           console.log("Not handled export format");
