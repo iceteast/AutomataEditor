@@ -15,54 +15,48 @@ interface DiagramProps {
 }
 
 
-var GeneratorEllipseSpot1 = new go.Spot(0.156, 0.156);
-var GeneratorEllipseSpot2 = new go.Spot(0.844, 0.844);
+// var GeneratorEllipseSpot1 = new go.Spot(0.156, 0.156);
+// var GeneratorEllipseSpot2 = new go.Spot(0.844, 0.844);
 var KAPPA = 4 * ((Math.sqrt(2) - 1) / 3);
 
 // HalfEllipse, Cylinder1
 // https://github.com/NorthwoodsSoftware/GoJS/blob/master/extensionsTS/Figures.ts
 
 go.Shape.defineFigureGenerator("StartNodeCircle", function (shape, w, h) {
-  var geo = new go.Geometry(go.Geometry.Ellipse)
-  // var geo = new go.Geometry();
-  //   .add(new go.PathFigure(p.x, p.y)
-  //        .add(new go.PathSegment(go.PathSegment.Arc, -sweep/2, sweep, 0, 0, radius, radius+layerThickness))
-  //        .add(new go.PathSegment(go.PathSegment.Line, q.x, q.y))
-  //        .add(new go.PathSegment(go.PathSegment.Arc, sweep/2, -sweep, 0, 0, radius, radius).close()));
-  // var geo1 = new go.Geometry();
-  // var geo = new go.Geometry()
-  // .add(new go.PathFigure(w / 2, 0, true)
-  //   // .add(new go.PathSegment(go.PathSegment.Bezier, .5 * w, 0, 0, h, (.5 - KAPPA * 0.5) * w, 0))
-  //   // .add(new go.PathSegment(go.PathSegment.Bezier, 1.0 * w, 0, (.5 + KAPPA * 0.5) * w, 0, 1.0 * w, KAPPA))
-  //   // .add(new go.PathSegment(go.PathSegment.Line, w, h))
-  //   // .add(new go.PathSegment(go.PathSegment.Bezier, w / 2, h / 2, KAPPA * w / 4, 0, w / 2, (.5 - KAPPA / 2) * h))
-  //   // .add(new go.PathSegment(go.PathSegment.Bezier, 0, h, w, (.5 + KAPPA / 2) * h, KAPPA * w, h).close()))
-  // )
-  // .setSpots(0, 0.156, 0.844, 0.844);
+  // var param1 = shape ? shape.parameter1 : NaN;
+  // if (isNaN(param1) || param1 < 0) param1 = 5;  // default corner
+  // param1 = Math.min(param1, w / 3);
+  // param1 = Math.min(param1, h / 3);
 
-  // .add(new go.PathFigure(0, h / 2, true)
-  //   .add(new go.PathSegment(go.PathSegment.Line, -w / 3, 0))
-  //   .add(new go.PathSegment(go.PathSegment.Line, -w / 3, h))
-  //   .add(new go.PathSegment(go.PathSegment.Line, 0, h / 2))
-  // );
-  geo.startX = 0;
-  geo.startY = 0;
-  geo.endX = w;
-  geo.endY = h;
-  geo.spot1 = GeneratorEllipseSpot1;
-  geo.spot2 = GeneratorEllipseSpot2;
+  // var cpOffset = param1 * KAPPA;
+  // var geo = new go.Geometry(go.Geometry.Ellipse)
+  var geo = new go.Geometry()
+    // Rounded rectangle
+    .add(new go.PathFigure(0, h / 2, true)
+      .add(new go.PathSegment(go.PathSegment.Bezier, w, h / 2, 0, 0, w, 0))
+      .add(new go.PathSegment(go.PathSegment.Bezier, 0, h / 2, w, h, 0, h))
+      // .add(new go.PathFigure(param1, 0, true)
+      //   .add(new go.PathSegment(go.PathSegment.Line, w - param1, 0))
+      //   .add(new go.PathSegment(go.PathSegment.Bezier, w, param1, w - cpOffset, 0, w, cpOffset))
+      //   .add(new go.PathSegment(go.PathSegment.Line, w, h - param1))
+      //   .add(new go.PathSegment(go.PathSegment.Bezier, w - param1, h, w, h - cpOffset, w - cpOffset, h))
+      //   .add(new go.PathSegment(go.PathSegment.Line, param1, h))
+      //   .add(new go.PathSegment(go.PathSegment.Bezier, 0, h - param1, cpOffset, h, 0, h - cpOffset))
+      //   .add(new go.PathSegment(go.PathSegment.Line, 0, param1))
+      //   .add(new go.PathSegment(go.PathSegment.Bezier, param1, 0, 0, cpOffset, cpOffset, 0).close()))
+    )
 
-  // geo1.figures
-  // for (var i = 0; i < geo.figures.count; i++) {
-  //   geo1 = geo1.add(geo.figures.elt(i));
+    .add(new go.PathFigure(0, h / 2, true)
+      .add(new go.PathSegment(go.PathSegment.Line, -h / 3, h / 3))
+      .add(new go.PathSegment(go.PathSegment.Line, 0, h / 2))
+      .add(new go.PathSegment(go.PathSegment.Line, -h / 3, 2 * h / 3))
+      .add(new go.PathSegment(go.PathSegment.Line, 0, h / 2))
+      .add(new go.PathSegment(go.PathSegment.Line, -h / 2, h / 2))
+    );
+  // if (cpOffset > 1) {
+  //   geo.spot1 = new go.Spot(0, 0, cpOffset, cpOffset);
+  //   geo.spot2 = new go.Spot(1, 1, -cpOffset, -cpOffset);
   // }
-  // geo.startX = 0;
-  // geo.startY = 0;
-  // geo.endX = w;
-  // geo.endY = h;
-  // geo.spot1 = GeneratorEllipseSpot1;
-  // geo.spot2 = GeneratorEllipseSpot2;
-
   return geo;
 });
 go.Shape.defineFigureGenerator("StartNodeRectangle", function (shape, w, h) {

@@ -10,6 +10,7 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
 import BoltIcon from '@mui/icons-material/Bolt';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import BackupIcon from '@mui/icons-material/Backup';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
@@ -49,7 +50,16 @@ import { convertToGraph, updateModelWithGraph } from './GraphConversion';
 
 function App() {
 
-
+  const clearCacheData = () => {
+    caches.keys().then((names) => {
+      names.forEach((name) => {
+        caches.delete(name);
+      });
+    });
+    localStorage.clear();
+    // reload to take effect
+    window.location.reload();
+  };
 
 
   const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(
@@ -61,6 +71,7 @@ function App() {
   const [linkDataArray, setLinkDataArray] = createPersistedState<Array<go.ObjectData>>('linkArray')(
     []
   );
+
   const [modelData, setModelData] = createPersistedState<go.ObjectData>('modelData')(
     { canRelink: true }
   );
@@ -681,6 +692,16 @@ function App() {
               disabled={true}
             >
               Make atomic
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<DeleteOutlineIcon />}
+              onClick={clearCacheData}
+            >
+              Clear Cache
             </Button>
           </Grid>
         </Grid>

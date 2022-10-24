@@ -14,18 +14,13 @@ export function labelAcceptsSymbol(symbol: string, label: string | undefined): b
     if (label === undefined) {
         return false;
     }
-    // if (label === undefined) {
-    //     return true;
-    // }
-    // now the separator is valid regex
-    // if (label.includes(separator) && label !== separator) {
-    //     const labels = label.split(separator);
-    //     return labels.includes(symbol);
-    // }
-
-    // return label === symbol;
+    if (label.trim() === separator) {
+        return symbol === separator;
+    }
+    const labels = label.split(separator).map(s => s.trim());
+    return labels.includes(symbol);
     // use label as regex
-    return new RegExp(label).test(symbol);
+    // return new RegExp(label).test(symbol);
 }
 
 export function closeStateEpsilon(graph: Graph, state: Node[]): Node[] {
@@ -132,6 +127,8 @@ export function getAlphabet(graph: Graph) {
         if (!isEpsilon(link.label)) {
             // alphabet.add(link.label);
 
+            // TODO: or allow combined symbols (need adaptation of simulation)
+            Array.from(ascii).filter(c => labelAcceptsSymbol(c, link.label)).forEach((c) => alphabet.add(c));
 
             // if (link.label === ";") {
             //     alphabet.add(";");
@@ -143,14 +140,14 @@ export function getAlphabet(graph: Graph) {
             //     });
             // }
 
-            const matches = ascii.match(new RegExp(link.label, "g"));
-            if (matches) {
-                matches.forEach((symbol: string) => {
-                    for (let i = 0; i < symbol.length; i++) {
-                        alphabet.add(symbol[i]);
-                    }
-                });
-            }
+            // const matches = ascii.match(new RegExp(link.label, "g"));
+            // if (matches) {
+            //     matches.forEach((symbol: string) => {
+            //         for (let i = 0; i < symbol.length; i++) {
+            //             alphabet.add(symbol[i]);
+            //         }
+            //     });
+            // }
         }
     });
     return alphabet;
@@ -302,6 +299,15 @@ export function toRegEx(graph: Graph) {
     const stateMap = new Map<Number, State>();
     const start = getStart(graph);
 
+    const labelToRegex = (label: string) => {
+        if (isEpsilon(label)) {
+            return epsilon;
+        }
+        if (label.trim() !== separator) {
+            return label.replaceAll(separator, "|");
+        }
+    }
+
     graph.nodes.forEach((node: Node) => {
         const state = new State();
         state.accepting = node.isAccepting;
@@ -311,7 +317,7 @@ export function toRegEx(graph: Graph) {
     graph.links.forEach((link: Link) => {
         const from = stateMap.get(link.from)!;
         const to = stateMap.get(link.to)!;
-        from.transitions.set(link.label, to);
+        from.transitions.set(labelToRegex(link.label), to);
     });
 
     console.log("stateMap", stateMap.get(start.id)!);
