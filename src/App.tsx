@@ -547,6 +547,9 @@ function App() {
 
   return (
     <div className='app'>
+      <p>
+        Old version of the automaton editor: <a href="https://neuralcoder3.github.io/automaton/">https://neuralcoder3.github.io/automaton/</a>
+      </p>
       <div className='topButtonBar'>
         <Grid container direction="row" alignItems="center" spacing={2} >
           <Grid item>
