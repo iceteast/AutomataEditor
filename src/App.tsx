@@ -4,6 +4,8 @@ import * as React from 'react';
 // import bcrypt from 'bcrypt';
 import pbkdf2 from 'pbkdf2';
 
+import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
+import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import TextareaAutosize from '@mui/material/TextareaAutosize';
 import TextField from '@mui/material/TextField';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
@@ -666,7 +668,7 @@ function App() {
               <Button
                 variant="contained"
                 color="primary"
-                startIcon={<BoltIcon />}
+                startIcon={<CloseFullscreenIcon />}
                 onClick={minimizeAutomaton}
               >
                 Minimize
@@ -678,7 +680,7 @@ function App() {
               <Button
                 variant="contained"
                 color="primary"
-                startIcon={<BoltIcon />}
+                startIcon={<SettingsBackupRestoreIcon />}
                 onClick={reverseAutomaton}
               >
                 Reverse

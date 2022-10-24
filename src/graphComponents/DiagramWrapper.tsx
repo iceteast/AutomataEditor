@@ -23,40 +23,23 @@ var KAPPA = 4 * ((Math.sqrt(2) - 1) / 3);
 // https://github.com/NorthwoodsSoftware/GoJS/blob/master/extensionsTS/Figures.ts
 
 go.Shape.defineFigureGenerator("StartNodeCircle", function (shape, w, h) {
-  // var param1 = shape ? shape.parameter1 : NaN;
-  // if (isNaN(param1) || param1 < 0) param1 = 5;  // default corner
-  // param1 = Math.min(param1, w / 3);
-  // param1 = Math.min(param1, h / 3);
-
-  // var cpOffset = param1 * KAPPA;
-  // var geo = new go.Geometry(go.Geometry.Ellipse)
+  const eW = w * 3 / 2;
+  const eH = h * 3 / 2;
+  const oX = (eW - w) / 2;
+  const oY = (eH - h) / 2;
   var geo = new go.Geometry()
-    // Rounded rectangle
-    .add(new go.PathFigure(0, h / 2, true)
-      .add(new go.PathSegment(go.PathSegment.Bezier, w, h / 2, 0, 0, w, 0))
-      .add(new go.PathSegment(go.PathSegment.Bezier, 0, h / 2, w, h, 0, h))
-      // .add(new go.PathFigure(param1, 0, true)
-      //   .add(new go.PathSegment(go.PathSegment.Line, w - param1, 0))
-      //   .add(new go.PathSegment(go.PathSegment.Bezier, w, param1, w - cpOffset, 0, w, cpOffset))
-      //   .add(new go.PathSegment(go.PathSegment.Line, w, h - param1))
-      //   .add(new go.PathSegment(go.PathSegment.Bezier, w - param1, h, w, h - cpOffset, w - cpOffset, h))
-      //   .add(new go.PathSegment(go.PathSegment.Line, param1, h))
-      //   .add(new go.PathSegment(go.PathSegment.Bezier, 0, h - param1, cpOffset, h, 0, h - cpOffset))
-      //   .add(new go.PathSegment(go.PathSegment.Line, 0, param1))
-      //   .add(new go.PathSegment(go.PathSegment.Bezier, param1, 0, 0, cpOffset, cpOffset, 0).close()))
+    .add(new go.PathFigure(-oX, h / 2, true)
+      .add(new go.PathSegment(go.PathSegment.Bezier, w + oX, h / 2, -oX, -oY, w + oX, -oY))
+      .add(new go.PathSegment(go.PathSegment.Bezier, -oX, h / 2, w + oX, h + oY, -oX, h + oY))
     )
 
-    .add(new go.PathFigure(0, h / 2, true)
-      .add(new go.PathSegment(go.PathSegment.Line, -h / 3, h / 3))
-      .add(new go.PathSegment(go.PathSegment.Line, 0, h / 2))
-      .add(new go.PathSegment(go.PathSegment.Line, -h / 3, 2 * h / 3))
-      .add(new go.PathSegment(go.PathSegment.Line, 0, h / 2))
-      .add(new go.PathSegment(go.PathSegment.Line, -h / 2, h / 2))
+    .add(new go.PathFigure(-oX, h / 2, true)
+      .add(new go.PathSegment(go.PathSegment.Line, -oX - h / 3, h / 3))
+      .add(new go.PathSegment(go.PathSegment.Line, -oX, h / 2))
+      .add(new go.PathSegment(go.PathSegment.Line, -oX - h / 3, 2 * h / 3))
+      .add(new go.PathSegment(go.PathSegment.Line, -oX, h / 2))
+      .add(new go.PathSegment(go.PathSegment.Line, -oX - h / 2, h / 2))
     );
-  // if (cpOffset > 1) {
-  //   geo.spot1 = new go.Spot(0, 0, cpOffset, cpOffset);
-  //   geo.spot2 = new go.Spot(1, 1, -cpOffset, -cpOffset);
-  // }
   return geo;
 });
 go.Shape.defineFigureGenerator("StartNodeRectangle", function (shape, w, h) {

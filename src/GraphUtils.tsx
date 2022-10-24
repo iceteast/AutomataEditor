@@ -381,10 +381,17 @@ function nameFromId(graph: Graph, id: number) {
     return graph.nodes.find((node: Node) => node.id === id)!.label;
 }
 
+function fullDFA(graph: Graph) {
+    return getReachableGraph(getPowerGraph(graph));
+}
+
 
 // TODO: debug
 export function minimize(graph: Graph) {
     // Hopcroft's algorithm
+
+    graph = fullDFA(graph);
+    graph.nodes = graph.nodes.map((node: Node) => { return { ...node, label: node.label.substring(1, node.label.length - 1) } });
 
     const alphabet = Array.from(getAlphabet(graph));
     const start = getStart(graph);
