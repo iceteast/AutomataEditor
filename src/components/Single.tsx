@@ -18,15 +18,14 @@ import Grid from '@mui/material/Grid';
 
 import "./Single.css";
 import { IconTextField } from "./IconTextField";
-import { nodeColor, nodeHighlightColor } from "../Const";
 
 interface SingleProp {
     graph: Graph;
-    colorNodes: (nodes: Node[]) => void;
+    colorNodes: (nodes: Set<number>) => void;
 }
 
 
-function Single({ graph, colorNodes }: SingleProp) {
+function Single({ graph, colorNodes: setColorNodes }: SingleProp) {
 
     // const [word, setWord] = React.useState('');
     const [word, setWord] = createPersistedState<string>('word')('');
@@ -36,26 +35,27 @@ function Single({ graph, colorNodes }: SingleProp) {
     // const [wordTrace, setWordTrace] = React.useState<JSX.Element>();
 
     const removeColor = () => {
-        colorNodes([]);
+        setColorNodes(new Set());
         // nodeArray.forEach((node) => {
         //     node.color = nodeColor;
         // });
     };
 
-    // const colorNodes = (nodes: Node[]) => {
-    //     // removeColor();
-    //     // console.log("coloring ", nodes);
-    //     // console.log(" to ", nodeHighlightColor);
-    //     // console.log("coloring " + [...currentNodes]);
-    //     colorFun(nodes);
-    //     // nodeArray.forEach((node) => {
-    //     //     if (nodes.find((cNode) => cNode.id === node.key)) {
-    //     //         node.color = nodeHighlightColor;
-    //     //         console.log("Set color of " + node.key + " label: " + node.text);
-    //     //     }
-    //     // });
-    //     // console.log("nodeArray: ", nodeArray);
-    // };
+    const colorNodes = (nodes: Node[]) => {
+        setColorNodes(new Set(nodes.map((node) => node.id)));
+        //     // removeColor();
+        //     // console.log("coloring ", nodes);
+        //     // console.log(" to ", nodeHighlightColor);
+        //     // console.log("coloring " + [...currentNodes]);
+        //     colorFun(nodes);
+        //     // nodeArray.forEach((node) => {
+        //     //     if (nodes.find((cNode) => cNode.id === node.key)) {
+        //     //         node.color = nodeHighlightColor;
+        //     //         console.log("Set color of " + node.key + " label: " + node.text);
+        //     //     }
+        //     // });
+        //     // console.log("nodeArray: ", nodeArray);
+    };
 
     const resetSimulation = () => {
         setCurrentNodes([]);

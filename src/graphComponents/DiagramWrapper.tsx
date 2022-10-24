@@ -1,7 +1,7 @@
 import * as go from 'gojs';
 import { ReactDiagram } from 'gojs-react';
 import * as React from 'react';
-import { nodeColor, nodeShape } from '../Const';
+import { nodeColor, nodeHighlightColor, nodeShape } from '../Const';
 
 import './Diagram.css';
 
@@ -12,6 +12,7 @@ interface DiagramProps {
   skipsDiagramUpdate: boolean;
   onDiagramEvent: (e: go.DiagramEvent) => void;
   onModelChange: (e: go.IncrementalData) => void;
+  // highlightedNodes: Set<number>
 }
 
 
@@ -114,6 +115,10 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
     }
   }
 
+  // private checkNode(key: number) {
+  //   return this.props.highlightedNodes.has(key) ? nodeHighlightColor : nodeColor;
+  // }
+
   /**
    * Diagram initialization method, which is passed to the ReactDiagram component.
    * This method is responsible for making the diagram and initializing the model, any templates,
@@ -187,6 +192,8 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
             toLinkableDuplicates: true, fromLinkableDuplicates: true
           },
           new go.Binding('fill', 'color'),
+          // new go.Binding('fill', 'key', (key) => { return this.props.highlightedNodes.has(key) ? nodeHighlightColor : nodeColor; }),
+          // new go.Binding('fill', 'key', this.checkNode),
           new go.Binding('figure').makeTwoWay(),
           new go.Binding('pathPattern', 'final', (final: boolean) => final ? doubleStrokePattern : null)),
         $(go.TextBlock,

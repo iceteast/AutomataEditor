@@ -63,6 +63,7 @@ function App() {
     window.location.reload();
   };
 
+  const [selectedNodes, setSelectedNodes] = React.useState<Set<number>>(new Set());
 
   const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(
     [
@@ -258,42 +259,42 @@ function App() {
   }
 
 
-  const colorNodes = (nodes: GraphNode[]) => {
-    // console.log("colorNodes", nodes, color);
-    let changed = false;
-    const narr = nodeDataArray.map((nd: go.ObjectData) => {
-      const color = nodes.some((n: GraphNode) => n.id === nd.key) ? nodeHighlightColor : nodeColor;
-      if (nd.color !== color) {
-        changed = true;
-        return { ...nd, color: color };
-      }
-      return nd;
-    });
-    // for (let i = 0; i < nodes.length; i++) {
-    //   const idx = mapLinkKeyIdx.get(nodes[i].id);
-    //   if (idx !== undefined && idx >= 0) {
-    //     if (nodeDataArray[idx].color !== color) {
-    //       nodeDataArray[idx].color = color;
-    //       changed = true;
-    //     }
-    //   } else {
-    //     console.log("colorNodes: node not found", nodes[i]);
-    //   }
-    //   // let node = nodes[i];
-    //   // node.color = color;
-    //   // if(node.children){
-    //   //   colorNodes(node.children, color);
-    //   // }
-    // }
-    if (changed) {
-      console.log("colorNodes", nodes);
-      // console.log("Changed");
-      // console.log("old nodes array: ", nodeDataArray);
-      // console.log("node array: ", narr);
-      setNodeDataArray(narr);
-      setSkipsDiagramUpdate(false);
-    }
-  }
+  // const colorNodes = (nodes: GraphNode[]) => {
+  //   // console.log("colorNodes", nodes, color);
+  //   let changed = false;
+  //   const narr = nodeDataArray.map((nd: go.ObjectData) => {
+  //     const color = nodes.some((n: GraphNode) => n.id === nd.key) ? nodeHighlightColor : nodeColor;
+  //     if (nd.color !== color) {
+  //       changed = true;
+  //       return { ...nd, color: color };
+  //     }
+  //     return nd;
+  //   });
+  //   // for (let i = 0; i < nodes.length; i++) {
+  //   //   const idx = mapLinkKeyIdx.get(nodes[i].id);
+  //   //   if (idx !== undefined && idx >= 0) {
+  //   //     if (nodeDataArray[idx].color !== color) {
+  //   //       nodeDataArray[idx].color = color;
+  //   //       changed = true;
+  //   //     }
+  //   //   } else {
+  //   //     console.log("colorNodes: node not found", nodes[i]);
+  //   //   }
+  //   //   // let node = nodes[i];
+  //   //   // node.color = color;
+  //   //   // if(node.children){
+  //   //   //   colorNodes(node.children, color);
+  //   //   // }
+  //   // }
+  //   if (changed) {
+  //     console.log("colorNodes", nodes);
+  //     // console.log("Changed");
+  //     // console.log("old nodes array: ", nodeDataArray);
+  //     // console.log("node array: ", narr);
+  //     setNodeDataArray(narr);
+  //     setSkipsDiagramUpdate(false);
+  //   }
+  // }
 
 
   // TODO: handleRelinkChange for insepector
@@ -538,6 +539,12 @@ function App() {
     setShowCopyPopup(true);
   };
 
+  const coloredNodeDataArray =
+    nodeDataArray.map((node) => {
+      const color = selectedNodes.has(node.key) ? nodeHighlightColor : nodeColor;
+      return { ...node, color: color };
+    });
+
   return (
     <div className='app'>
       <div className='topButtonBar'>
@@ -613,7 +620,9 @@ function App() {
         </Grid>
       </div>
       <DiagramWrapper
-        nodeDataArray={nodeDataArray}
+        nodeDataArray={coloredNodeDataArray}
+        // nodeDataArray={nodeDataArray}
+        // highlightedNodes={selectedNodes}
         linkDataArray={linkDataArray}
         modelData={modelData}
         skipsDiagramUpdate={skipsDiagramUpdate}
@@ -709,7 +718,7 @@ function App() {
         </Grid>
       </div>
       <div>
-        {singleMulti === 'single' ? <Single graph={graph} colorNodes={colorNodes} /> : <Multi graph={graph} />}
+        {singleMulti === 'single' ? <Single graph={graph} colorNodes={setSelectedNodes} /> : <Multi graph={graph} />}
       </div>
 
 
