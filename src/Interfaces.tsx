@@ -1,9 +1,20 @@
+export type FormatTypes = "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL" | "Grammar";
+export type CloudProvider = "Google Drive" | "Dropbox" | "Pastebin" | "PublicPastebin" | "File";
+
+export interface Cloud {
+    name: CloudProvider;
+    load: boolean;
+    save: boolean;
+    adminOnly: boolean;
+}
+
 export interface Format {
-    name: "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL" | "Grammar";
+    name: FormatTypes;
     import: boolean;
     export: boolean;
     adminOnly: boolean;
 }
+
 
 export interface Graph {
     nodes: Node[];

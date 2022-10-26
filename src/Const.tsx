@@ -1,4 +1,4 @@
-import { Format } from "./Interfaces";
+import { Cloud, Format } from "./Interfaces";
 
 // TODO: choose longer password
 export const pwd_hash = "129b24f5e1bfadab7b38f1e4c0dd73ec0ea9c0bd2015cf66c6fee4658c3af204c4c3f98de2f70f99d60f11e1d975a1d67c48f0bcb6b02c319eddaaea3d94099f";
@@ -48,4 +48,36 @@ export const formats: Format[] = [
         adminOnly: true,
     },
     // TODO: dot / graphviz
-]
+];
+export const clouds: Cloud[] = [
+    {
+        name: "Google Drive",
+        load: false, // TODO
+        save: false, // TODO
+        adminOnly: false,
+    },
+    {
+        name: "Dropbox",
+        load: false, // TODO
+        save: false, // TODO
+        adminOnly: false,
+    },
+    {
+        name: "PublicPastebin",
+        load: true, // TODO:
+        save: true, // TODO:
+        adminOnly: false,
+    },
+    {
+        name: "Pastebin",
+        load: true, // TODO:
+        save: true, // TODO:
+        adminOnly: false,
+    },
+    {
+        name: "File",
+        load: true,
+        save: true,
+        adminOnly: false,
+    },
+];

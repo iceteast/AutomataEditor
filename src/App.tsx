@@ -24,6 +24,7 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 // import { CopyToClipboard } from 'react-copy-to-clipboard';
 // import Copy from 'react-copy';
@@ -39,15 +40,16 @@ import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
 import './App.css';
-import { formats, nodeColor, nodeHighlightColor, pwd_hash, startNodeShape } from './Const';
+import { clouds, formats, nodeColor, nodeHighlightColor, pwd_hash, startNodeShape } from './Const';
 import Info from './components/Info';
 import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, minimize, ofRegEx, reverseGraph, toLatex, toRegEx } from './GraphUtils';
-import { Format, Graph, Node as GraphNode } from "./Interfaces";
+import { Cloud, CloudProvider, Format, Graph, Node as GraphNode } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
 import createPersistedState from 'use-persisted-state';
 import Button from '@mui/material/Button';
 import { convertToGraph, updateModelWithGraph } from './GraphConversion';
+import { ChangeEvent } from 'react';
 
 
 function App() {
@@ -375,12 +377,17 @@ function App() {
 
   // const [formatStr, setFormatStr] = React.useState('');
   const [formatStr, setFormatStr] = createPersistedState<string>("format")('');
-
   const handleFormatChange = (event: SelectChangeEvent) => {
     setFormatStr(event.target.value as string);
   };
-
   const format = formats.find((f) => f.name === formatStr);
+
+  const [cloudStr, setCloudStr] = createPersistedState<string>("cloud")('');
+  const handleCloudChange = (event: SelectChangeEvent) => {
+    setCloudStr(event.target.value as string);
+  };
+  const cloud = clouds.find((c) => c.name === cloudStr);
+
   const [copyText, setCopyText] = React.useState('');
   const [showCopyPopup, setShowCopyPopup] = React.useState(false);
   const [importText, setImportText] = React.useState('');
@@ -441,22 +448,120 @@ function App() {
   }, []);
 
 
+  const graphFromStr = (str: string) => {
+    const graph = JSON.parse(str) as Graph;
+    if (graph) {
+      updateModelWithGraph(graph, setNodeDataArray, setLinkDataArray);
+    }
+  };
+
   const importFromUrl = (searchParams: string) => {
     const queryParams = new URLSearchParams(searchParams);
     const enc = queryParams.get('graph');
     if (enc) {
       const json = lzbase62.decompress(enc);
-      return JSON.parse(json) as Graph;
+      graphFromStr(json);
     }
-    return undefined;
   };
 
+
   React.useEffect(() => {
-    const graph = importFromUrl(window.location.search);
-    if (graph) {
-      updateModelWithGraph(graph, setNodeDataArray, setLinkDataArray);
-    }
+    importFromUrl(window.location.search);
   }, []);
+
+  const [showLoadPopup, setShowLoadPopup] = React.useState(false);
+  const [loadContent, setLoadContent] = React.useState(<></>);
+
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    setShowLoadPopup(false);
+    if (!e.target.files) {
+      return;
+    }
+    const file = e.target.files[0];
+    // const { name } = file;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (!evt?.target?.result) {
+        return;
+      }
+      const { result } = evt.target;
+      // console.log("result", result);
+      graphFromStr(result as string);
+    };
+    // reader.readAsBinaryString(file);
+    reader.readAsText(file, 'utf-8');
+  };
+
+  const openLoadPopup = () => {
+    if (!cloud)
+      return;
+    if (cloud.adminOnly && !admin) {
+      setCopyText("Admin only");
+      setShowCopyPopup(true);
+      return;
+    }
+
+    switch (cloud.name) {
+      case 'File':
+        setLoadContent(
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<UploadFileIcon />}
+            fullWidth
+            sx={{ marginRight: "1rem" }}
+          >
+            Upload Automaton
+            <input type="file" hidden onChange={handleFileUpload} />
+          </Button>
+        );
+        break;
+      case 'Google Drive':
+        break;
+      case 'Dropbox':
+        break;
+      case 'Pastebin':
+        break;
+      case 'PublicPastebin':
+        break;
+      default:
+        return;
+    }
+    setShowLoadPopup(true);
+  };
+
+  const saveGraph = () => {
+    if (!cloud)
+      return;
+    if (cloud.adminOnly && !admin) {
+      setCopyText("Admin only");
+      setShowCopyPopup(true);
+      return;
+    }
+    const graphStr = JSON.stringify(graph, null, 2);
+    switch (cloud.name) {
+      case 'File':
+        var data = new Blob([graphStr], { type: 'application/json;charset=utf8' });
+        var csvURL = window.URL.createObjectURL(data);
+        const tempLink = document.createElement('a');
+        tempLink.href = csvURL;
+        tempLink.setAttribute('download', saveText + '.json');
+        tempLink.click();
+        break;
+      case 'Google Drive':
+        break;
+      case 'Dropbox':
+        break;
+      case 'Pastebin':
+        break;
+      case 'PublicPastebin':
+        break;
+      default:
+        return;
+    }
+    setShowSavePopup(false);
+  };
 
   const importGraph = () => {
     setShowImportPopup(false);
@@ -545,6 +650,9 @@ function App() {
       return { ...node, color: color };
     });
 
+  const [showSavePopup, setShowSavePopup] = React.useState(false);
+  const [saveText, setSaveText] = React.useState('');
+
   return (
     <div className='app'>
       <p>
@@ -553,11 +661,33 @@ function App() {
       <div className='topButtonBar'>
         <Grid container direction="row" alignItems="center" spacing={2} >
           <Grid item>
+            <FormControl fullWidth style={{ minWidth: 120 }} >
+              <InputLabel id="cloud-select-label">Cloud</InputLabel>
+              <Select
+                labelId="cloud-select-label"
+                id="cloud-select"
+                value={cloudStr}
+                label="Cloud"
+                onChange={handleCloudChange}
+              >
+                {
+                  clouds.filter(
+                    (c) => admin || !c.adminOnly
+                  ).map((cloud: Cloud) => {
+                    return <MenuItem value={cloud.name}>{cloud.name}</MenuItem>
+                  })
+                }
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item>
             <Button
               variant="contained"
               color="primary"
               startIcon={<SaveIcon />}
-              disabled={true}
+              disabled={!cloud || !cloud.save}
+              onClick={() => setShowSavePopup(true)}
             >
               Save
             </Button>
@@ -567,7 +697,8 @@ function App() {
               variant="contained"
               color="primary"
               startIcon={<FileOpenIcon />}
-              disabled={true}
+              disabled={!cloud || !cloud.load}
+              onClick={openLoadPopup}
             >
               Load
             </Button>
@@ -769,8 +900,64 @@ function App() {
         </div>
       </Popup>
 
+      <Popup open={showSavePopup} onClose={() => setShowSavePopup(false)} modal>
+        <div>
+
+          <Grid container direction="column" alignItems="center" spacing={2}>
+            <Grid item style={{ width: "100%" }}>
+              <TextField
+                id="filled-multiline-flexible"
+                label="Filename"
+                fullWidth
+                value={saveText}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSaveText(event.target.value)}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item style={{ width: "100%" }}>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                startIcon={<SaveIcon />}
+                onClick={saveGraph}
+              >
+                Save
+              </Button>
+            </Grid>
+          </Grid>
+        </div>
+      </Popup>
 
 
+      <Popup open={showLoadPopup} onClose={() => setShowLoadPopup(false)} modal>
+        <div>
+          {loadContent}
+          {/* <Grid container direction="column" alignItems="center" spacing={2}>
+            <Grid item style={{ width: "100%" }}>
+              <TextField
+                id="filled-multiline-flexible"
+                label="Filename"
+                fullWidth
+                value={saveText}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSaveText(event.target.value)}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item style={{ width: "100%" }}>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                startIcon={<SaveIcon />}
+                onClick={saveGraph}
+              >
+                Save
+              </Button>
+            </Grid>
+          </Grid> */}
+        </div>
+      </Popup>
 
 
       {/* {inspector} */}
