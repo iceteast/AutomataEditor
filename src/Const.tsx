@@ -9,6 +9,8 @@ export const startNodeShape = "StartNodeCircle";
 export const separator = ","; // ";"
 export const epsilon = "ε";
 export const Sigma = "Σ";
+export const pasteeeApiToken = "adTwyfWKVqOyTPvQz0LsOOD1scKBRdD6gKj32dVKS";
+export const pasteeePublicApiToken = "uAjDAj2ZlEYV3CkKaWfcjWufwHPgQOwkM1wsRGvTm";
 export const ascii = Array.from(Array(128).keys()).map((i) => String.fromCharCode(i)).join("");
 export const formats: Format[] = [
     {
@@ -51,21 +53,9 @@ export const formats: Format[] = [
 ];
 export const clouds: Cloud[] = [
     {
-        name: "Google Drive",
-        load: false, // TODO
-        save: false, // TODO
-        adminOnly: false,
-    },
-    {
-        name: "Dropbox",
-        load: false, // TODO
-        save: false, // TODO
-        adminOnly: false,
-    },
-    {
-        name: "PublicPastebin",
-        load: true, // TODO:
-        save: true, // TODO:
+        name: "File",
+        load: true,
+        save: true,
         adminOnly: false,
     },
     {
@@ -75,9 +65,21 @@ export const clouds: Cloud[] = [
         adminOnly: false,
     },
     {
-        name: "File",
-        load: true,
-        save: true,
+        name: "Public Pastebin",
+        load: true, // TODO:
+        save: true, // TODO:
+        adminOnly: false,
+    },
+    {
+        name: "Google Drive",
+        load: false, // TODO
+        save: false, // TODO
+        adminOnly: false,
+    },
+    {
+        name: "Dropbox",
+        load: false, // TODO
+        save: false, // TODO
         adminOnly: false,
     },
 ];

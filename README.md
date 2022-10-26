@@ -2,7 +2,7 @@
 
 <General Info>
 
-## Goals
+## Goals/TODO
 
 ### General
 
@@ -40,6 +40,7 @@ The editor should be intuitive and easy to use.
 - [ ] SVG
 - [ ] Table (for Turing)
 - [ ] RegEx
+- [ ] Grammar
 
 ### Memory
 

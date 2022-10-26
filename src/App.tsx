@@ -3,6 +3,7 @@ import * as React from 'react';
 // import { produce } from 'immer';
 // import bcrypt from 'bcrypt';
 import pbkdf2 from 'pbkdf2';
+import axios from 'axios';
 
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
@@ -40,7 +41,7 @@ import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
 import './App.css';
-import { clouds, formats, nodeColor, nodeHighlightColor, pwd_hash, startNodeShape } from './Const';
+import { clouds, formats, nodeColor, nodeHighlightColor, pasteeeApiToken, pasteeePublicApiToken, pwd_hash, startNodeShape } from './Const';
 import Info from './components/Info';
 import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, minimize, ofRegEx, reverseGraph, toLatex, toRegEx } from './GraphUtils';
 import { Cloud, CloudProvider, Format, Graph, Node as GraphNode } from "./Interfaces";
@@ -452,7 +453,9 @@ function App() {
     const graph = JSON.parse(str) as Graph;
     if (graph) {
       updateModelWithGraph(graph, setNodeDataArray, setLinkDataArray);
+      return true;
     }
+    return false;
   };
 
   const importFromUrl = (searchParams: string) => {
@@ -469,8 +472,59 @@ function App() {
     importFromUrl(window.location.search);
   }, []);
 
+  const [ownPastes, setOwnPastes] = createPersistedState<Array<[string, string]>>("ownPastes")([]);
+
+  const uploadPaste = (filename: string, paste: string, token: string) => {
+    console.log("uploadPaste", filename, token);
+    axios.post('https://api.paste.ee/v1/pastes',
+      {
+        'description': 'Automaton ' + filename,
+        'sections': [
+          {
+            'name': 'Automaton ' + filename,
+            'syntax': 'json',
+            'contents': paste,
+          },
+        ]
+      },
+      {
+        headers: {
+          'content-type': 'application/json',
+          'X-Auth-Token': token,
+        }
+      }).then((res) => {
+        // console.log("res", res);
+        const id = res.data.id;
+        const link = res.data.link
+        setOwnPastes((prev) => [...prev, [id, filename]]);
+        popupMessage("Uploaded with id " + id + "\n" + link);
+      }).catch((err) => {
+        console.log("err", err);
+        popupMessage("Error uploading paste");
+      });
+  };
+
+  const readPaste = (id: string, token: string, cont: (s: string) => void) => {
+    console.log("readPaste", id, token);
+    axios.get('https://api.paste.ee/v1/pastes/' + id,
+      {
+        headers: {
+          'X-Auth-Token': token,
+        }
+      }).then((res) => {
+        // console.log("res", res);
+        // const paste = res.data.sections[0].contents;
+        const paste = res.data.paste.sections[0].contents;
+        // graphFromStr(paste);
+        cont(paste);
+      }).catch((err) => {
+        console.log("err", err);
+        popupMessage("Error reading paste");
+      });
+  };
+
   const [showLoadPopup, setShowLoadPopup] = React.useState(false);
-  const [loadContent, setLoadContent] = React.useState(<></>);
+  // const [loadContent, setLoadContent] = React.useState(<></>);
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     setShowLoadPopup(false);
@@ -493,18 +547,44 @@ function App() {
     reader.readAsText(file, 'utf-8');
   };
 
-  const openLoadPopup = () => {
+  const [loadText, setLoadText] = React.useState('');
+
+  const loadGraphFromPasteID = (id: string, token: string) => {
+    setPublicPastes(undefined);
+    setShowLoadPopup(false);
+    readPaste(id, token, (paste) => {
+      const success = graphFromStr(paste);
+      if (!success)
+        popupMessage("Error loading paste");
+    });
+  };
+
+  const listPastes = async (token: string) => {
+    console.log("listPastes", token);
+    const res = await axios.get('https://api.paste.ee/v1/pastes',
+      {
+        headers: {
+          'X-Auth-Token': token,
+        }
+      });
+    // console.log("res", res);
+    const pastes = res.data.data;
+    // console.log("pastes", pastes);
+    return pastes;
+  };
+
+  const [publicPastes, setPublicPastes] = React.useState<undefined | any[]>(undefined);
+
+  const renderLoadPopup = () => {
     if (!cloud)
-      return;
+      return <> </>;
     if (cloud.adminOnly && !admin) {
-      setCopyText("Admin only");
-      setShowCopyPopup(true);
-      return;
+      return <>Admin only</>;
     }
 
-    switch (cloud.name) {
+    switch (cloud?.name) {
       case 'File':
-        setLoadContent(
+        return (
           <Button
             component="label"
             variant="outlined"
@@ -516,20 +596,98 @@ function App() {
             <input type="file" hidden onChange={handleFileUpload} />
           </Button>
         );
-        break;
-      case 'Google Drive':
-        break;
-      case 'Dropbox':
-        break;
       case 'Pastebin':
-        break;
-      case 'PublicPastebin':
-        break;
+        return (
+          <Grid container direction="column" alignItems="center" spacing={1}>
+            <Grid item style={{ width: "100%" }}>
+              <TextField
+                id="loadtext-filled-multiline-flexible"
+                label="ID"
+                fullWidth
+                value={loadText}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setLoadText(event.target.value) }}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item style={{ width: "100%" }}>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                startIcon={<FileOpenIcon />}
+                onClick={() => loadGraphFromPasteID(loadText, pasteeeApiToken)}
+              >
+                Load
+              </Button>
+            </Grid>
+            {
+              ownPastes.map(paste => {
+                const [id, filename] = paste;
+                return (
+                  <Grid item style={{ width: "100%" }}>
+                    <Button
+                      key={id}
+                      variant="contained"
+                      color="info"
+                      fullWidth
+                      startIcon={<FileOpenIcon />}
+                      onClick={() => loadGraphFromPasteID(id, pasteeeApiToken)}
+                    >
+                      {`${filename} (${id})`}
+                    </Button>
+                  </Grid>
+                );
+              })
+            }
+          </Grid>
+        );
+      case "Public Pastebin":
+        if (publicPastes === undefined) {
+          setPublicPastes([]);
+          console.log("Loading public pastes");
+          listPastes(pasteeePublicApiToken).then((pastes) => {
+            console.log("pastes", pastes);
+            setPublicPastes(pastes);
+          });
+        }
+        return (
+          <Grid container direction="column" alignItems="center" spacing={1}>
+            {
+              (publicPastes === undefined || publicPastes.length === 0) ?
+                "Loading..." :
+                publicPastes.map((paste) => {
+                  return (
+                    <Grid item style={{ width: "100%" }}>
+                      <Button
+                        key={paste.id}
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        startIcon={<FileOpenIcon />}
+                        onClick={() => loadGraphFromPasteID(paste.id, pasteeePublicApiToken)}
+                      >
+                        {paste.description}
+                      </Button>
+                    </Grid>
+                  );
+                })
+            }
+          </Grid>
+        );
       default:
-        return;
+        break;
     }
-    setShowLoadPopup(true);
+    return <> </>
   };
+
+  const popupMessage = (message: string) => {
+    setCopyText(message);
+    setShowCopyPopup(true);
+  };
+
+  // React.useEffect(() => {
+  //   readPaste("eYgWG", pasteeeApiToken, (s) => console.log(s));
+  // }, []);
 
   const saveGraph = () => {
     if (!cloud)
@@ -554,8 +712,10 @@ function App() {
       case 'Dropbox':
         break;
       case 'Pastebin':
+        uploadPaste(saveText, graphStr, pasteeeApiToken);
         break;
-      case 'PublicPastebin':
+      case 'Public Pastebin':
+        uploadPaste(saveText, graphStr, pasteeePublicApiToken);
         break;
       default:
         return;
@@ -698,7 +858,8 @@ function App() {
               color="primary"
               startIcon={<FileOpenIcon />}
               disabled={!cloud || !cloud.load}
-              onClick={openLoadPopup}
+              // onClick={openLoadPopup}
+              onClick={() => setShowLoadPopup(true)}
             >
               Load
             </Button>
@@ -875,7 +1036,7 @@ function App() {
           <Grid container direction="column" alignItems="center" spacing={2}>
             <Grid item style={{ width: "100%" }}>
               <TextField
-                id="filled-multiline-flexible"
+                id="import-filled-multiline-flexible"
                 label="Import String"
                 fullWidth
                 multiline
@@ -906,7 +1067,7 @@ function App() {
           <Grid container direction="column" alignItems="center" spacing={2}>
             <Grid item style={{ width: "100%" }}>
               <TextField
-                id="filled-multiline-flexible"
+                id="save-filled-multiline-flexible"
                 label="Filename"
                 fullWidth
                 value={saveText}
@@ -930,9 +1091,11 @@ function App() {
       </Popup>
 
 
-      <Popup open={showLoadPopup} onClose={() => setShowLoadPopup(false)} modal>
+      <Popup open={showLoadPopup} onClose={() => { setShowLoadPopup(false); setPublicPastes(undefined); }} modal>
         <div>
-          {loadContent}
+          {
+            renderLoadPopup()
+          }
           {/* <Grid container direction="column" alignItems="center" spacing={2}>
             <Grid item style={{ width: "100%" }}>
               <TextField
