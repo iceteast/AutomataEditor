@@ -341,6 +341,9 @@ function App() {
   };
 
   const automicAutomaton = () => {
+    if (!admin) {
+      return;
+    }
     const newGraph = makeAtomic(graph);
     if (newGraph) {
       updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
@@ -1030,15 +1033,17 @@ function App() {
               </Button>
             </Grid>
           }
-          <Grid item>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={automicAutomaton}
-            >
-              Make atomic
-            </Button>
-          </Grid>
+          {admin &&
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={automicAutomaton}
+              >
+                Make atomic
+              </Button>
+            </Grid>
+          }
           {/* <Grid item>
             <Button
               variant="contained"
