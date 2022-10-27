@@ -11,6 +11,7 @@ export const epsilon = "ε";
 export const Sigma = "Σ";
 export const pasteeeApiToken = "adTwyfWKVqOyTPvQz0LsOOD1scKBRdD6gKj32dVKS";
 export const pasteeePublicApiToken = "uAjDAj2ZlEYV3CkKaWfcjWufwHPgQOwkM1wsRGvTm";
+export const pasteeeTokens = [pasteeeApiToken, pasteeePublicApiToken];
 export const ascii = Array.from(Array(128).keys()).map((i) => String.fromCharCode(i)).join("");
 export const formats: Format[] = [
     {

@@ -4,6 +4,8 @@ import { toRegex } from "./RegEx/regex";
 import { State } from "./RegEx/state";
 // import { DFA } from "./RegEx2/DFS";
 import regParser from "automata.js";
+// import { DeterministicFiniteAutomaton, NonDeterministicFiniteAutomaton } from "fauton";
+import { DeterministicFiniteAutomaton, NonDeterministicFiniteAutomaton } from "@fauton/fa"
 
 // import DFA from "regex-to-dfa";
 
@@ -385,9 +387,29 @@ function fullDFA(graph: Graph) {
     return getReachableGraph(getPowerGraph(graph));
 }
 
+export function removeEpsilon(graph: Graph) {
+    const fautonNFA = toFautonNFA(graph);
+    // fautonNFA.convertToRegularNfa();
+    return fromFautonFSM(fautonNFA);
+}
+
+
+export function makeAtomic(graph: Graph) {
+    const fautonNFA = toFautonNFA(graph);
+    const fautonDFA = fautonNFA.convertToDeterministicFiniteAutomaton();
+    return fromFautonFSM(fautonDFA);
+}
+
+export function minimize(graph: Graph) {
+    const fautonNFA = toFautonNFA(graph);
+    const fautonDFA = fautonNFA.convertToDeterministicFiniteAutomaton();
+    const fautonMinDFA = fautonDFA.minimize();
+    return fromFautonFSM(fautonMinDFA);
+}
+
 
 // TODO: debug
-export function minimize(graph: Graph) {
+export function minimizeHopcroft(graph: Graph) {
     // Hopcroft's algorithm
 
     graph = fullDFA(graph);
@@ -596,9 +618,88 @@ ${P}
 }
 
 
+function toFautonNFA(graph: Graph) {
+    // https://www.npmjs.com/package/fauton#transitions-record-transformation
+    const alphabet = Array.from(getAlphabet(graph));
+    const start = getStart(graph);
+
+    let trans: Record<number, Array<number | null>> = {};
+    let eps_trans: Record<number, Array<number>> = {};
+
+    graph.nodes.forEach((node: Node) => {
+        trans[node.id] = alphabet.map((c: string) => {
+            const link = graph.links.find((link: Link) => link.from === node.id && link.label === c);
+            return link ? link.to : null;
+        });
+    });
+
+    graph.nodes.forEach((node: Node) => {
+        let eps: number[] = [];
+        graph.nodes.forEach((node2: Node) => {
+            const link = graph.links.find((link: Link) => link.from === node.id && link.to === node2.id && isEpsilon(link.label));
+            if (link) {
+                eps.push(node2.id);
+            }
+        });
+        if (eps.length > 0) {
+            eps_trans[node.id] = eps;
+        }
+    });
+
+    return new NonDeterministicFiniteAutomaton(
+        (_, automatonTest) => automatonTest, {
+        start_state: start.id,
+        alphabets: alphabet,
+        final_states: graph.nodes.filter((node: Node) => node.isAccepting).map((node: Node) => node.id),
+        label: 'converted from graph',
+        states: graph.nodes.map((node: Node) => node.id),
+        transitions: trans,
+        epsilon_transitions: eps_trans
+    });
+}
+
+function fromFautonFSM(dfa: DeterministicFiniteAutomaton | NonDeterministicFiniteAutomaton) {
+    console.log(dfa);
+    const stateToId = new Map<string, number>();
+
+    dfa.automaton.states.forEach((state: string, i: number) => {
+        if (state === dfa.automaton.start_state) {
+            stateToId.set(state, 0);
+        } else {
+            stateToId.set(state, i + 1);
+        }
+    });
+
+    const nodes: Node[] =
+        dfa.automaton.states.map((state: string) => {
+            return {
+                id: stateToId.get(state)!,
+                label: state,
+                isAccepting: dfa.automaton.final_states.includes(state)
+            };
+        });
+
+    const links: Link[] =
+        Object.keys(dfa.automaton.transitions).map((fromState: string) => {
+            const transitions = dfa.automaton.transitions[fromState];
+            return Object.keys(transitions).map((label: string) => {
+                const toStates = transitions[label];
+                return toStates.map((toState: string) => {
+                    return {
+                        from: stateToId.get(fromState)!,
+                        to: stateToId.get(toState)!,
+                        label: label
+                    };
+                });
+            }).flat();
+        }).flat();
+
+    // TODO: concat epsilon transitions?
+
+    return { nodes: nodes, links: links };
+}
 
 
-// TODO: make atomic links
 
 // TODO: login via cms (Discourse SSO) or github/google (OAuth)
 

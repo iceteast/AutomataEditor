@@ -42,9 +42,9 @@ import { DiagramWrapper } from './graphComponents/DiagramWrapper';
 import { SelectionInspector } from './graphComponents/SelectionInspector';
 
 import './App.css';
-import { clouds, formats, nodeColor, nodeHighlightColor, pasteeeApiToken, pasteeePublicApiToken, pwd_hash, startNodeShape } from './Const';
+import { clouds, epsilon, formats, nodeColor, nodeHighlightColor, pasteeeApiToken, pasteeePublicApiToken, pasteeeTokens, pwd_hash, startNodeShape } from './Const';
 import Info from './components/Info';
-import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, minimize, ofRegEx, reverseGraph, toLatex, toRegEx } from './GraphUtils';
+import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, makeAtomic, minimize, ofRegEx, removeEpsilon, reverseGraph, toLatex, toRegEx } from './GraphUtils';
 import { Cloud, CloudProvider, Format, Graph, Node as GraphNode } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
@@ -340,6 +340,20 @@ function App() {
     updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
   };
 
+  const automicAutomaton = () => {
+    const newGraph = makeAtomic(graph);
+    if (newGraph) {
+      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
+    }
+  }
+
+  const removeEpsilonAutomaton = () => {
+    const newGraph = removeEpsilon(graph);
+    if (newGraph) {
+      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
+    }
+  }
+
   const minimizeAutomaton = () => {
     if (!admin) {
       return;
@@ -421,34 +435,6 @@ function App() {
     );
   };
 
-  React.useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const pwd = queryParams.get('pwd');
-    const toHash = queryParams.get('hash');
-    if (toHash) {
-      hash(
-        toHash,
-        (err: Error, derivedKey: Buffer) => {
-          if (err) return;
-          const hash = derivedKey.toString('hex');
-          console.log("hash", hash);
-        }
-      );
-    }
-
-    if (pwd) {
-      hash(
-        pwd,
-        (err: Error, derivedKey: Buffer) => {
-          if (err) return;
-          const hash = derivedKey.toString('hex');
-          if (hash === pwd_hash)
-            setAdmin(true);
-        }
-      );
-    }
-  }, []);
-
 
   const graphFromStr = (str: string) => {
     const graph = JSON.parse(str) as Graph;
@@ -498,14 +484,21 @@ function App() {
         const id = res.data.id;
         const link = res.data.link
         setOwnPastes((prev) => [...prev, [id, filename]]);
-        popupMessage("Uploaded with id " + id + "\n" + link);
+        const urlWithId = window.location.href.replace(window.location.search, '?paste=' + id);
+        popupMessage("Uploaded with id " + id + "\n" + link + "\nAccess directly via " + urlWithId);
       }).catch((err) => {
         console.log("err", err);
         popupMessage("Error uploading paste");
       });
   };
 
-  const readPaste = (id: string, token: string, cont: (s: string) => void) => {
+  const showPasteError = (err: Error) => {
+    console.log("err", err);
+    popupMessage("Error reading paste");
+  };
+
+
+  const readPaste = (id: string, token: string, cont: (s: string) => void, err = showPasteError) => {
     console.log("readPaste", id, token);
     axios.get('https://api.paste.ee/v1/pastes/' + id,
       {
@@ -518,10 +511,7 @@ function App() {
         const paste = res.data.paste.sections[0].contents;
         // graphFromStr(paste);
         cont(paste);
-      }).catch((err) => {
-        console.log("err", err);
-        popupMessage("Error reading paste");
-      });
+      }).catch(err);
   };
 
   const [showLoadPopup, setShowLoadPopup] = React.useState(false);
@@ -815,6 +805,53 @@ function App() {
   const [showSavePopup, setShowSavePopup] = React.useState(false);
   const [saveText, setSaveText] = React.useState('');
 
+  const readPasteId = (pasteId: string) => {
+    readPaste(pasteId, pasteeeApiToken, (paste) => {
+      graphFromStr(paste);
+    }, (err) => {
+      // console.log("Error reading private paste", err);
+      readPaste(pasteId, pasteeePublicApiToken, (paste) => {
+        graphFromStr(paste);
+      }, (err) => {
+        // console.log("Error reading public paste", err);
+        popupMessage("Paste " + pasteId + " not found");
+      });
+    });
+  };
+
+  React.useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const pwd = queryParams.get('pwd');
+    const paste = queryParams.get('paste');
+    const toHash = queryParams.get('hash');
+    if (toHash) {
+      hash(
+        toHash,
+        (err: Error, derivedKey: Buffer) => {
+          if (err) return;
+          const hash = derivedKey.toString('hex');
+          console.log("hash", hash);
+        }
+      );
+    }
+
+    if (pwd) {
+      hash(
+        pwd,
+        (err: Error, derivedKey: Buffer) => {
+          if (err) return;
+          const hash = derivedKey.toString('hex');
+          if (hash === pwd_hash)
+            setAdmin(true);
+        }
+      );
+    }
+
+    if (paste) {
+      readPasteId(paste);
+    }
+  }, []);
+
   return (
     <div className='app'>
       <p>
@@ -997,11 +1034,20 @@ function App() {
             <Button
               variant="contained"
               color="primary"
-              disabled={true}
+              onClick={automicAutomaton}
             >
               Make atomic
             </Button>
           </Grid>
+          {/* <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={removeEpsilonAutomaton}
+            >
+              Remove Epsilon
+            </Button>
+          </Grid> */}
           <Grid item>
             <Button
               variant="contained"
@@ -1030,22 +1076,24 @@ function App() {
               </Highlight>
             </pre>
           </CodeBlock>
+          {
+            exportLanguage.toLowerCase() === 'latex' && format?.name === 'LaTeX' &&
+            <form className="center" action="https://www.overleaf.com/docs" method="post" target="_blank">
+              <textarea id="output" name="snip" style={{ "display": "none" }} >
+                {copyText}
+              </textarea>
+              <Button
+                variant="contained"
+                type='submit'
+                color="primary"
+                fullWidth
+                startIcon={<Icon icon="mdi:leaf" />}
+              >
+                Open in Overleaf
+              </Button>
+            </form>
 
-          <form className="center" action="https://www.overleaf.com/docs" method="post" target="_blank">
-            <textarea id="output" name="snip" style={{ "display": "none" }} >
-              {copyText}
-            </textarea>
-            {/* <input type="submit" value="Open in Overleaf" id="overleafExport" className="btn-success btn btn-sm" /> */}
-            <Button
-              variant="contained"
-              type='submit'
-              color="primary"
-              fullWidth
-              startIcon={<Icon icon="mdi:leaf" />}
-            >
-              Open in Overleaf
-            </Button>
-          </form>
+          }
         </div>
       </Popup>
 
