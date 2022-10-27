@@ -26,6 +26,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { Icon } from '@iconify/react';
 
 // import { CopyToClipboard } from 'react-copy-to-clipboard';
 // import Copy from 'react-copy';
@@ -681,6 +682,7 @@ function App() {
   };
 
   const popupMessage = (message: string) => {
+    setExportLanguage("text")
     setCopyText(message);
     setShowCopyPopup(true);
   };
@@ -1019,7 +1021,7 @@ function App() {
 
       {/* <Popup trigger={<button> Trigger</button>} modal> */}
       <Popup open={showCopyPopup} onClose={() => setShowCopyPopup(false)} modal>
-        <div>
+        <div style={{ "overflowY": "auto", "maxHeight": "100vh" }}>
           <CodeBlock highlight={true} >
             <pre>
               {/* <Highlight className="language-javascript"> */}
@@ -1028,8 +1030,25 @@ function App() {
               </Highlight>
             </pre>
           </CodeBlock>
+
+          <form className="center" action="https://www.overleaf.com/docs" method="post" target="_blank">
+            <textarea id="output" name="snip" style={{ "display": "none" }} >
+              {copyText}
+            </textarea>
+            {/* <input type="submit" value="Open in Overleaf" id="overleafExport" className="btn-success btn btn-sm" /> */}
+            <Button
+              variant="contained"
+              type='submit'
+              color="primary"
+              fullWidth
+              startIcon={<Icon icon="mdi:leaf" />}
+            >
+              Open in Overleaf
+            </Button>
+          </form>
         </div>
       </Popup>
+
       <Popup open={showImportPopup} onClose={() => setShowImportPopup(false)} modal>
         <div>
 
@@ -1092,33 +1111,8 @@ function App() {
 
 
       <Popup open={showLoadPopup} onClose={() => { setShowLoadPopup(false); setPublicPastes(undefined); }} modal>
-        <div>
-          {
-            renderLoadPopup()
-          }
-          {/* <Grid container direction="column" alignItems="center" spacing={2}>
-            <Grid item style={{ width: "100%" }}>
-              <TextField
-                id="filled-multiline-flexible"
-                label="Filename"
-                fullWidth
-                value={saveText}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSaveText(event.target.value)}
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item style={{ width: "100%" }}>
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                startIcon={<SaveIcon />}
-                onClick={saveGraph}
-              >
-                Save
-              </Button>
-            </Grid>
-          </Grid> */}
+        <div style={{ "overflowY": "auto", "maxHeight": "100vh" }}>
+          {renderLoadPopup()}
         </div>
       </Popup>
 

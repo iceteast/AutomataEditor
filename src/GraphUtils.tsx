@@ -251,7 +251,7 @@ export function toLatex(graph: Graph) {
         graph.links.map((link: Link) =>
         // link.from + " -> " + link.to + " [label=\"" + link.label + "\"]"
         {
-            const label = link.label ? `node {${quoteLabel(link.label)}}` : "";
+            const label = link.label ? `node {${quoteLabel(isEpsilon(link.label) ? "$\\varepsilon$" : link.label)}}` : "";
             return `\\path (${link.from}) edge [${link.to === link.from ? "loop" : ""}] ${label} (${link.to});`;
         }
         ).join("\n");
