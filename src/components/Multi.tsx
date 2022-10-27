@@ -3,7 +3,7 @@ import { Graph } from "../Interfaces";
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import React from "react";
+import React, { useEffect } from "react";
 
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -33,7 +33,8 @@ function Multi({ graph }: MultiProp) {
         setTests(event.target.value);
     };
 
-    const check = (event: React.MouseEvent<HTMLButtonElement>) => {
+
+    const check = () => {
         var testCases = tests.split("\n").map(
             (testCase) => {
                 const [expectedStr, input] = testCase.split(/\|(.*)/s);
@@ -95,6 +96,8 @@ function Multi({ graph }: MultiProp) {
         setResult(resultOutput);
     };
 
+    useEffect(check, [tests]);
+
     return (
         <div className="multi">
             <div className="multiInput">
@@ -102,14 +105,15 @@ function Multi({ graph }: MultiProp) {
                     id="filled-multiline-flexible"
                     label="Multiline"
                     multiline
-                    rows={6}
+                    fullWidth
+                    rows={12}
                     value={tests}
                     onChange={handleChange}
                     variant="filled"
                 />
             </div>
             <div className="multiInfo">
-                <Button variant="contained" color={checkBtnColor} onClick={check}>Check</Button>
+                {/* <Button variant="contained" color={checkBtnColor} onClick={check}>Check</Button> */}
                 <div className="multiResult">
                     {
                         result

@@ -1014,7 +1014,7 @@ function App() {
           </Grid>
         </Grid>
       </div>
-      <div>
+      <div style={{ "width": "100%" }}>
         {singleMulti === 'single' ? <Single graph={graph} colorNodes={setSelectedNodes} /> : <Multi graph={graph} />}
       </div>
 

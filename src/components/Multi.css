@@ -1,6 +1,7 @@
 .multi {
     padding: 20px;
     display: flex;
+    width: 100%;
 }
 
 .multi>div {
@@ -9,9 +10,12 @@
     float: left;
     padding: 20px; */
     padding: 10px;
+    width: 100%;
 }
 
-.multiInput {}
+.multiInput {
+    width: 100%;
+}
 
 .multiResult {
     padding-top: 10px;
