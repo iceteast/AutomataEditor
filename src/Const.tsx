@@ -60,7 +60,7 @@ export const clouds: Cloud[] = [
         adminOnly: false,
     },
     {
-        name: "Pastebin",
+        name: "Unlisted Pastebin",
         load: true, // TODO:
         save: true, // TODO:
         adminOnly: false,

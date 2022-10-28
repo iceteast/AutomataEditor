@@ -44,8 +44,8 @@ import { SelectionInspector } from './graphComponents/SelectionInspector';
 import './App.css';
 import { clouds, epsilon, formats, nodeColor, nodeHighlightColor, pasteeeApiToken, pasteeePublicApiToken, pasteeeTokens, pwd_hash, startNodeShape } from './Const';
 import Info from './components/Info';
-import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, makeAtomic, minimize, ofRegEx, removeEpsilon, reverseGraph, toLatex, toRegEx } from './GraphUtils';
-import { Cloud, CloudProvider, Format, Graph, Node as GraphNode } from "./Interfaces";
+import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, makeAtomic, minimize, complementGraph, ofRegEx, removeEpsilon, reverseGraph, toLatex, toRegEx, intersectionGraph, isEquiv, differenceGraph } from './GraphUtils';
+import { Cloud, CloudProvider, Format, Graph, Node as GraphNode, Paste } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
 import createPersistedState from 'use-persisted-state';
@@ -69,14 +69,17 @@ function App() {
 
   const [selectedNodes, setSelectedNodes] = React.useState<Set<number>>(new Set());
 
+  const initNodes: go.ObjectData[] = [
+    // { key: 0, text: 'Start', color: nodeColor, deletable: false, figure: startNodeShape },
+    { key: 0, text: 'Start', color: nodeColor, loc: '0 0', deletable: false, figure: startNodeShape },
+  ];
+  const initLinks: go.ObjectData[] = [];
+
   const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(
-    [
-      // { key: 0, text: 'Start', color: nodeColor, deletable: false, figure: startNodeShape },
-      { key: 0, text: 'Start', color: nodeColor, loc: '0 0', deletable: false, figure: startNodeShape },
-    ]
+    initNodes
   );
   const [linkDataArray, setLinkDataArray] = createPersistedState<Array<go.ObjectData>>('linkArray')(
-    []
+    initLinks
   );
 
   const [modelData, setModelData] = createPersistedState<go.ObjectData>('modelData')(
@@ -377,6 +380,23 @@ function App() {
     }
   };
 
+  const [selectedFunction, setSelectedFunction] = createPersistedState<"intersection" | "difference" | "equivalence" | undefined>('selectedFunction')(undefined);
+
+  const intersection = () => {
+    // const newGraph = complementGraph(graph);
+    // updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
+    setSelectedFunction("intersection");
+    setShowSelectPopup(true);
+  };
+  const checkEquivalence = () => {
+    setSelectedFunction("equivalence");
+    setShowSelectPopup(true);
+  };
+  const difference = () => {
+    setSelectedFunction("difference");
+    setShowSelectPopup(true);
+  };
+
   // React.useEffect(() => {
   //   updateModelWithGraph(
   //     {
@@ -462,13 +482,13 @@ function App() {
     importFromUrl(window.location.search);
   }, []);
 
-  const [ownPastes, setOwnPastes] = createPersistedState<Array<[string, string]>>("ownPastes")([]);
+  const [ownPastes, setOwnPastes] = createPersistedState<Paste[]>("ownPastes")([]);
 
   const uploadPaste = (filename: string, paste: string, token: string) => {
     console.log("uploadPaste", filename, token);
     axios.post('https://api.paste.ee/v1/pastes',
       {
-        'description': 'Automaton ' + filename,
+        'description': filename,
         'sections': [
           {
             'name': 'Automaton ' + filename,
@@ -486,7 +506,11 @@ function App() {
         // console.log("res", res);
         const id = res.data.id;
         const link = res.data.link
-        setOwnPastes((prev) => [...prev, [id, filename]]);
+        setOwnPastes((prev) => [...prev,
+        {
+          id: id,
+          description: filename,
+        }]);
         const urlWithId = window.location.href.replace(window.location.search, '?paste=' + id);
         popupMessage("Uploaded with id " + id + "\n" + link + "\nAccess directly via " + urlWithId);
       }).catch((err) => {
@@ -518,6 +542,7 @@ function App() {
   };
 
   const [showLoadPopup, setShowLoadPopup] = React.useState(false);
+  const [showSelectPopup, setShowSelectPopup] = React.useState(false);
   // const [loadContent, setLoadContent] = React.useState(<></>);
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -544,7 +569,7 @@ function App() {
   const [loadText, setLoadText] = React.useState('');
 
   const loadGraphFromPasteID = (id: string, token: string) => {
-    setPublicPastes(undefined);
+    setPublicPastes(null);
     setShowLoadPopup(false);
     readPaste(id, token, (paste) => {
       const success = graphFromStr(paste);
@@ -567,7 +592,36 @@ function App() {
     return pastes;
   };
 
-  const [publicPastes, setPublicPastes] = React.useState<undefined | any[]>(undefined);
+  const renderPasteList = (list: Paste[], cont: (pasteId: string) => void) => {
+    return (list.map((paste) =>
+    (
+      <Grid item style={{ width: "100%" }}>
+        <Button
+          key={paste.id}
+          variant="contained"
+          color="info"
+          fullWidth
+          startIcon={<FileOpenIcon />}
+          onClick={() => cont(paste.id)}
+        >
+          {`${paste.description} (${paste.id})`}
+        </Button>
+      </Grid>
+    )));
+  };
+
+  const loadPublicPastes = () => {
+    if (publicPastes === null) {
+      setPublicPastes([]);
+      // console.log("Loading public pastes");
+      listPastes(pasteeePublicApiToken).then((pastes) => {
+        // console.log("pastes", pastes);
+        setPublicPastes(pastes);
+      });
+    }
+  };
+
+  const [publicPastes, setPublicPastes] = React.useState<null | any[]>(null);
 
   const renderLoadPopup = () => {
     if (!cloud)
@@ -590,7 +644,7 @@ function App() {
             <input type="file" hidden onChange={handleFileUpload} />
           </Button>
         );
-      case 'Pastebin':
+      case 'Unlisted Pastebin':
         return (
           <Grid container direction="column" alignItems="center" spacing={1}>
             <Grid item style={{ width: "100%" }}>
@@ -615,56 +669,21 @@ function App() {
               </Button>
             </Grid>
             {
-              ownPastes.map(paste => {
-                const [id, filename] = paste;
-                return (
-                  <Grid item style={{ width: "100%" }}>
-                    <Button
-                      key={id}
-                      variant="contained"
-                      color="info"
-                      fullWidth
-                      startIcon={<FileOpenIcon />}
-                      onClick={() => loadGraphFromPasteID(id, pasteeeApiToken)}
-                    >
-                      {`${filename} (${id})`}
-                    </Button>
-                  </Grid>
-                );
-              })
+              renderPasteList(
+                ownPastes,
+                (pasteId) => loadGraphFromPasteID(pasteId, pasteeeApiToken)
+              )
             }
           </Grid>
         );
       case "Public Pastebin":
-        if (publicPastes === undefined) {
-          setPublicPastes([]);
-          console.log("Loading public pastes");
-          listPastes(pasteeePublicApiToken).then((pastes) => {
-            console.log("pastes", pastes);
-            setPublicPastes(pastes);
-          });
-        }
+        loadPublicPastes();
         return (
           <Grid container direction="column" alignItems="center" spacing={1}>
             {
-              (publicPastes === undefined || publicPastes.length === 0) ?
+              (publicPastes === null || publicPastes.length === 0) ?
                 "Loading..." :
-                publicPastes.map((paste) => {
-                  return (
-                    <Grid item style={{ width: "100%" }}>
-                      <Button
-                        key={paste.id}
-                        variant="contained"
-                        color="primary"
-                        fullWidth
-                        startIcon={<FileOpenIcon />}
-                        onClick={() => loadGraphFromPasteID(paste.id, pasteeePublicApiToken)}
-                      >
-                        {paste.description}
-                      </Button>
-                    </Grid>
-                  );
-                })
+                renderPasteList(publicPastes, (pasteId) => loadGraphFromPasteID(pasteId, pasteeePublicApiToken))
             }
           </Grid>
         );
@@ -706,7 +725,7 @@ function App() {
         break;
       case 'Dropbox':
         break;
-      case 'Pastebin':
+      case 'Unlisted Pastebin':
         uploadPaste(saveText, graphStr, pasteeeApiToken);
         break;
       case 'Public Pastebin':
@@ -799,6 +818,7 @@ function App() {
     setShowCopyPopup(true);
   };
 
+
   const coloredNodeDataArray =
     nodeDataArray.map((node) => {
       const color = selectedNodes.has(node.key) ? nodeHighlightColor : nodeColor;
@@ -854,6 +874,70 @@ function App() {
       readPasteId(paste);
     }
   }, []);
+
+  const handleSelectedFunction = (pasteId: string, token: string) => {
+    // switch(selectedFunction) {
+    // case 'intersection':
+    setPublicPastes(null);
+    setShowSelectPopup(false);
+    readPaste(pasteId, token, (paste) => {
+      const graph1 = graph;
+      const graph2 = JSON.parse(paste) as Graph;
+      if (!graph2) {
+        popupMessage("Error loading paste");
+      }
+      switch (selectedFunction) {
+        case 'intersection':
+        case 'difference':
+          let new_graph;
+          switch (selectedFunction) {
+            case 'intersection':
+              new_graph = intersectionGraph(graph1, graph2);
+              break;
+            case 'difference':
+              new_graph = differenceGraph(graph1, graph2);
+              break;
+            default:
+          }
+          if (new_graph) {
+            updateModelWithGraph(new_graph, setNodeDataArray, setLinkDataArray);
+          }
+          break;
+        case 'equivalence':
+          const isEquivalent = isEquiv(graph1, graph2);
+          popupMessage(isEquivalent ? "Both graphs are equivalent" : "The graphs are not equivalent");
+          break;
+      }
+    });
+
+  };
+
+  const renderSelectPopup = () => {
+    loadPublicPastes();
+    return (<Grid container direction="column" alignItems="center" spacing={1}>
+      {
+        (publicPastes === null || publicPastes.length === 0) ?
+          "Loading..." :
+          renderPasteList(publicPastes, (pasteId) => handleSelectedFunction(pasteId, pasteeePublicApiToken))
+      }
+      {
+        renderPasteList(
+          ownPastes,
+          (pasteId) => handleSelectedFunction(pasteId, pasteeeApiToken)
+        )
+      }
+    </Grid>);
+  };
+
+  const clearGraph = () => {
+    const new_graph = {
+      nodes: [
+        { id: 0, label: "Start", isAccepting: false },
+      ],
+      links: [],
+    };
+    updateModelWithGraph(new_graph, setNodeDataArray, setLinkDataArray);
+  };
 
   return (
     <div className='app'>
@@ -1038,6 +1122,39 @@ function App() {
               <Button
                 variant="contained"
                 color="primary"
+                onClick={intersection}
+              >
+                Intersection
+              </Button>
+            </Grid>
+          }
+          {admin &&
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={difference}
+              >
+                Difference
+              </Button>
+            </Grid>
+          }
+          {admin &&
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={checkEquivalence}
+              >
+                Equivalence
+              </Button>
+            </Grid>
+          }
+          {admin &&
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
                 onClick={automicAutomaton}
               >
                 Make atomic
@@ -1061,6 +1178,16 @@ function App() {
               onClick={clearCacheData}
             >
               Clear Cache
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<DeleteOutlineIcon />}
+              onClick={clearGraph}
+            >
+              Clear Graph
             </Button>
           </Grid>
         </Grid>
@@ -1162,13 +1289,17 @@ function App() {
         </div>
       </Popup>
 
-
-      <Popup open={showLoadPopup} onClose={() => { setShowLoadPopup(false); setPublicPastes(undefined); }} modal>
+      <Popup open={showLoadPopup} onClose={() => { setShowLoadPopup(false); setPublicPastes(null); }} modal>
         <div style={{ "overflowY": "auto", "maxHeight": "100vh" }}>
           {renderLoadPopup()}
         </div>
       </Popup>
 
+      <Popup open={showSelectPopup} onClose={() => { setShowSelectPopup(false); setPublicPastes(null); }} modal>
+        <div style={{ "overflowY": "auto", "maxHeight": "100vh" }}>
+          {renderSelectPopup()}
+        </div>
+      </Popup>
 
       {/* {inspector} */}
     </div>

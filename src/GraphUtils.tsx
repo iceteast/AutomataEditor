@@ -6,6 +6,7 @@ import { State } from "./RegEx/state";
 import regParser from "automata.js";
 // import { DeterministicFiniteAutomaton, NonDeterministicFiniteAutomaton } from "fauton";
 import { DeterministicFiniteAutomaton, NonDeterministicFiniteAutomaton } from "@fauton/fa"
+import { ObjectMap } from "./ObjectMap";
 
 // import DFA from "regex-to-dfa";
 
@@ -618,16 +619,19 @@ ${P}
 }
 
 
-function toFautonNFA(graph: Graph) {
+function toFautonNFA(graph: Graph, alphabet?: string[]) {
     // https://www.npmjs.com/package/fauton#transitions-record-transformation
-    const alphabet = Array.from(getAlphabet(graph));
+    if (!alphabet) {
+        alphabet = Array.from(getAlphabet(graph));
+    }
+    // const alphabet = Array.from(getAlphabet(graph));
     const start = getStart(graph);
 
     let trans: Record<number, Array<number | null>> = {};
     let eps_trans: Record<number, Array<number>> = {};
 
     graph.nodes.forEach((node: Node) => {
-        trans[node.id] = alphabet.map((c: string) => {
+        trans[node.id] = alphabet!.map((c: string) => {
             const link = graph.links.find((link: Link) => link.from === node.id && link.label === c);
             return link ? link.to : null;
         });
@@ -697,6 +701,102 @@ function fromFautonFSM(dfa: DeterministicFiniteAutomaton | NonDeterministicFinit
     // TODO: concat epsilon transitions?
 
     return { nodes: nodes, links: links };
+}
+
+export function complementGraph(graph: Graph) {
+    // assumes graph to be atomic
+    const nodes = graph.nodes.map(
+        (node: Node) => {
+            return {
+                ...node,
+                isAccepting: !node.isAccepting
+            };
+        }
+    );
+    return { nodes: nodes, links: graph.links };
+}
+
+function linkMap(links: Link[]): Map<number, Map<string, number>> {
+    const map = new Map<number, Map<string, number>>();
+    links.forEach((link: Link) => {
+        if (!map.has(link.from)) {
+            map.set(link.from, new Map<string, number>());
+        }
+        map.get(link.from)!.set(link.label, link.to);
+    });
+    return map;
+}
+
+export function intersectionGraph(graph1: Graph, graph2: Graph) {
+    // assumes both graphs have the same alphabet and be atomic
+    // built on product graph
+
+    // console.log("graph1", graph1);
+    // console.log("graph2", graph2);
+
+    const alphabet1 = Array.from(getAlphabet(graph1));
+    const alphabet2 = Array.from(getAlphabet(graph2));
+    const alphabet = alphabet1.filter((c: string) => alphabet2.includes(c));
+
+    const stateMap = new ObjectMap<[number, number], Node>();
+    const start1 = getStart(graph1);
+    const start2 = getStart(graph2);
+    let i = 1;
+    graph1.nodes.forEach((node1: Node) => {
+        graph2.nodes.forEach((node2: Node) => {
+            let id;
+            if (node1.id === start1.id && node2.id === start2.id) {
+                id = 0;
+            } else {
+                id = i++;
+            }
+            stateMap.set([node1.id, node2.id], {
+                id: id,
+                label: "(" + node1.label + "," + node2.label + ")",
+                isAccepting: node1.isAccepting && node2.isAccepting
+            });
+        });
+    });
+
+    const linkMap1 = linkMap(graph1.links);
+    const linkMap2 = linkMap(graph2.links);
+    const links: Link[] = [];
+    stateMap.forEach((node: Node, [node1Id, node2Id]: [number, number]) => {
+        alphabet.forEach((c: string) => {
+            const to1 = linkMap1.get(node1Id)?.get(c);
+            const to2 = linkMap2.get(node2Id)?.get(c);
+            if (to1 !== undefined && to2 !== undefined) {
+                const to = stateMap.get([to1, to2])!.id;
+                links.push({ from: node.id, to: to, label: c });
+            }
+        });
+    });
+
+    const intersect_graph = { nodes: Array.from(stateMap.values()), links: links };
+    // console.log("intersect_graph", intersect_graph);
+    return intersect_graph;
+}
+
+export function unionGraph(graph1: Graph, graph2: Graph) {
+    // we use A ∪ B = ¬(¬A ∩ ¬B)
+    return complementGraph(intersectionGraph(complementGraph(graph1), complementGraph(graph2)));
+}
+
+export function differenceGraph(graph1: Graph, graph2: Graph) {
+    // we use A - B = A ∩ ¬B
+    return intersectionGraph(graph1, complementGraph(graph2));
+}
+
+function isEmptyGraph(graph: Graph) {
+    return graph.nodes.filter((node: Node) => node.isAccepting).length === 0;
+}
+
+export function isEquiv(graph1: Graph, graph2: Graph) {
+    // we use A ≡ B = (A - B) ∪ (B - A)
+    // return unionGraph(differenceGraph(graph1, graph2), differenceGraph(graph2, graph1));
+    const diff1 = getReachableGraph(differenceGraph(graph1, graph2));
+    const diff2 = getReachableGraph(differenceGraph(graph2, graph1));
+    return isEmptyGraph(diff1) && isEmptyGraph(diff2);
 }
 
 

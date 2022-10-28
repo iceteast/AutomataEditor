@@ -1,5 +1,5 @@
 export type FormatTypes = "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL" | "Grammar";
-export type CloudProvider = "Google Drive" | "Dropbox" | "Pastebin" | "Public Pastebin" | "File";
+export type CloudProvider = "Google Drive" | "Dropbox" | "Unlisted Pastebin" | "Public Pastebin" | "File";
 
 export interface Cloud {
     name: CloudProvider;
@@ -33,4 +33,9 @@ export interface Link {
     from: number;
     to: number;
     label: string;
+}
+
+export interface Paste {
+    id: string;
+    description: string;
 }
