@@ -45,7 +45,7 @@ import './App.css';
 import { clouds, epsilon, formats, nodeColor, nodeHighlightColor, pasteeeApiToken, pasteeePublicApiToken, pasteeeTokens, pwd_hash, startNodeShape } from './Const';
 import Info from './components/Info';
 import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, makeAtomic, minimize, complementGraph, ofRegEx, removeEpsilon, reverseGraph, toLatex, toRegEx, intersectionGraph, isEquiv, differenceGraph } from './GraphUtils';
-import { Cloud, CloudProvider, Format, Graph, Node as GraphNode, Paste } from "./Interfaces";
+import { Cloud, CloudProvider, ControlledAccess, Format, Graph, Node as GraphNode, Paste } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
 import createPersistedState from 'use-persisted-state';
@@ -603,6 +603,7 @@ function App() {
           fullWidth
           startIcon={<FileOpenIcon />}
           onClick={() => cont(paste.id)}
+          style={{ justifyContent: "flex-start" }}
         >
           {`${paste.description} (${paste.id})`}
         </Button>
@@ -623,11 +624,20 @@ function App() {
 
   const [publicPastes, setPublicPastes] = React.useState<null | any[]>(null);
 
+  const canAccess = (access: ControlledAccess | undefined) => {
+    if (!access)
+      return false;
+    if (access === 'Admin' && !admin)
+      return false;
+    if (access === 'Inaccessible')
+      return false;
+    // Public
+    return true;
+  };
+
   const renderLoadPopup = () => {
-    if (!cloud)
-      return <> </>;
-    if (cloud.adminOnly && !admin) {
-      return <>Admin only</>;
+    if (!canAccess(cloud?.load)) {
+      return <>Inaccessible</>;
     }
 
     switch (cloud?.name) {
@@ -704,15 +714,11 @@ function App() {
   // }, []);
 
   const saveGraph = () => {
-    if (!cloud)
-      return;
-    if (cloud.adminOnly && !admin) {
-      setCopyText("Admin only");
-      setShowCopyPopup(true);
-      return;
+    if (!canAccess(cloud?.save)) {
+      return <>Inaccessible</>;
     }
     const graphStr = JSON.stringify(graph, null, 2);
-    switch (cloud.name) {
+    switch (cloud!.name) {
       case 'File':
         var data = new Blob([graphStr], { type: 'application/json;charset=utf8' });
         var csvURL = window.URL.createObjectURL(data);
@@ -912,9 +918,32 @@ function App() {
 
   };
 
+  const [selectText, setSelectText] = createPersistedState<string>('selectText')('');
+
   const renderSelectPopup = () => {
     loadPublicPastes();
     return (<Grid container direction="column" alignItems="center" spacing={1}>
+      <Grid item style={{ width: "100%" }}>
+        <TextField
+          id="selecttext-filled-multiline-flexible"
+          label="Paste-ID"
+          fullWidth
+          value={loadText}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => { setSelectText(event.target.value) }}
+          variant="outlined"
+        />
+      </Grid>
+      <Grid item style={{ width: "100%" }}>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          startIcon={<FileOpenIcon />}
+          onClick={() => handleSelectedFunction(selectText, pasteeeApiToken)}
+        >
+          Load
+        </Button>
+      </Grid>
       {
         (publicPastes === null || publicPastes.length === 0) ?
           "Loading..." :
@@ -958,7 +987,8 @@ function App() {
               >
                 {
                   clouds.filter(
-                    (c) => admin || !c.adminOnly
+                    // (c) => admin || !c.adminOnly
+                    (c) => canAccess(c.load) || canAccess(c.save)
                   ).map((cloud: Cloud) => {
                     return <MenuItem value={cloud.name}>{cloud.name}</MenuItem>
                   })
@@ -972,7 +1002,7 @@ function App() {
               variant="contained"
               color="primary"
               startIcon={<SaveIcon />}
-              disabled={!cloud || !cloud.save}
+              disabled={!canAccess(cloud?.save)}
               onClick={() => setShowSavePopup(true)}
             >
               Save
@@ -983,7 +1013,7 @@ function App() {
               variant="contained"
               color="primary"
               startIcon={<FileOpenIcon />}
-              disabled={!cloud || !cloud.load}
+              disabled={!canAccess(cloud?.load)}
               // onClick={openLoadPopup}
               onClick={() => setShowLoadPopup(true)}
             >

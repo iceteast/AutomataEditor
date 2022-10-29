@@ -1,11 +1,17 @@
 export type FormatTypes = "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL" | "Grammar";
 export type CloudProvider = "Google Drive" | "Dropbox" | "Unlisted Pastebin" | "Public Pastebin" | "File";
 
+// export enum ControlledAccess {
+//     Public,
+//     Admin,
+//     Inaccessible,
+// }
+export type ControlledAccess = "Public" | "Admin" | "Inaccessible";
+
 export interface Cloud {
     name: CloudProvider;
-    load: boolean;
-    save: boolean;
-    adminOnly: boolean;
+    load: ControlledAccess;
+    save: ControlledAccess;
 }
 
 export interface Format {

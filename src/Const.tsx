@@ -55,32 +55,27 @@ export const formats: Format[] = [
 export const clouds: Cloud[] = [
     {
         name: "File",
-        load: true,
-        save: true,
-        adminOnly: false,
+        load: "Public",
+        save: "Public",
     },
     {
         name: "Unlisted Pastebin",
-        load: true, // TODO:
-        save: true, // TODO:
-        adminOnly: false,
+        load: "Public",
+        save: "Public",
     },
     {
         name: "Public Pastebin",
-        load: true, // TODO:
-        save: true, // TODO:
-        adminOnly: false,
+        load: "Public",
+        save: "Admin",
     },
     {
         name: "Google Drive",
-        load: false, // TODO
-        save: false, // TODO
-        adminOnly: false,
+        load: "Inaccessible",
+        save: "Inaccessible",
     },
     {
         name: "Dropbox",
-        load: false, // TODO
-        save: false, // TODO
-        adminOnly: false,
+        load: "Inaccessible",
+        save: "Inaccessible",
     },
 ];
