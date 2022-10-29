@@ -794,8 +794,10 @@ function isEmptyGraph(graph: Graph) {
 export function isEquiv(graph1: Graph, graph2: Graph) {
     // we use A ≡ B = (A - B) ∪ (B - A)
     // return unionGraph(differenceGraph(graph1, graph2), differenceGraph(graph2, graph1));
-    const diff1 = getReachableGraph(differenceGraph(graph1, graph2));
-    const diff2 = getReachableGraph(differenceGraph(graph2, graph1));
+    const atomic1 = makeAtomic(graph1);
+    const atomic2 = makeAtomic(graph2);
+    const diff1 = getReachableGraph(differenceGraph(atomic1, atomic2));
+    const diff2 = getReachableGraph(differenceGraph(atomic2, atomic1));
     return isEmptyGraph(diff1) && isEmptyGraph(diff2);
 }
 
