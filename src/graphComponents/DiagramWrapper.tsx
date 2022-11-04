@@ -23,17 +23,67 @@ var KAPPA = 4 * ((Math.sqrt(2) - 1) / 3);
 // HalfEllipse, Cylinder1
 // https://github.com/NorthwoodsSoftware/GoJS/blob/master/extensionsTS/Figures.ts
 
+
+function addEllipse(geo: go.Geometry, w: number, h: number, ew: number, eh: number) {
+  const ox = (ew - w) / 2;
+  const oy = (eh - h) / 2;
+  return geo
+    .add(new go.PathFigure(-ox, h / 2, true)
+      .add(new go.PathSegment(go.PathSegment.Bezier, w + ox, h / 2, -ox, -oy, w + ox, -oy))
+      .add(new go.PathSegment(go.PathSegment.Bezier, -ox, h / 2, w + ox, h + oy, -ox, h + oy))
+    );
+}
+
 go.Shape.defineFigureGenerator("StartNodeCircle", function (shape, w, h) {
   const eW = w * 3 / 2;
-  const eH = h * 3 / 2;
+  const eH = h * 4 / 2;
   const oX = (eW - w) / 2;
   const oY = (eH - h) / 2;
-  var geo = new go.Geometry()
+  var geo = new go.Geometry();
+  geo = addEllipse(geo, w, h, eW, eH);
+  geo = geo
     .add(new go.PathFigure(-oX, h / 2, true)
-      .add(new go.PathSegment(go.PathSegment.Bezier, w + oX, h / 2, -oX, -oY, w + oX, -oY))
-      .add(new go.PathSegment(go.PathSegment.Bezier, -oX, h / 2, w + oX, h + oY, -oX, h + oY))
-    )
+      .add(new go.PathSegment(go.PathSegment.Line, -oX - h / 3, h / 3))
+      .add(new go.PathSegment(go.PathSegment.Line, -oX, h / 2))
+      .add(new go.PathSegment(go.PathSegment.Line, -oX - h / 3, 2 * h / 3))
+      .add(new go.PathSegment(go.PathSegment.Line, -oX, h / 2))
+      .add(new go.PathSegment(go.PathSegment.Line, -oX - h / 2, h / 2))
+    );
+  return geo;
+});
 
+go.Shape.defineFigureGenerator("Ellipse_final", function (shape, w, h) {
+  var geo = new go.Geometry();
+  geo = addEllipse(geo, w, h, w * 3 / 2, h * 2);
+  geo = addEllipse(geo, w, h, w, h * 3 / 2);
+  return geo;
+});
+
+
+go.Shape.defineFigureGenerator("StartNodeCircle_final", function (shape, w, h) {
+  const eW = w * 3 / 2;
+  const eH = h * 4 / 2;
+  const oX = (eW - w) / 2;
+  const oY = (eH - h) / 2;
+
+  // const w2 = w;
+  // const h2 = h;
+  // const eW2 = w2;
+  // const eH2 = h2;
+  // const oX2 = (eW2 - w) / 2;
+  // const oY2 = (eH2 - h) / 2;
+  var geo = new go.Geometry();
+  // .add(new go.PathFigure(-oX, h / 2, true)
+  //   .add(new go.PathSegment(go.PathSegment.Bezier, w + oX, h / 2, -oX, -oY, w + oX, -oY))
+  //   .add(new go.PathSegment(go.PathSegment.Bezier, -oX, h / 2, w + oX, h + oY, -oX, h + oY))
+  // )
+  // .add(new go.PathFigure(-oX2, h2 / 2, true)
+  //   .add(new go.PathSegment(go.PathSegment.Bezier, w2 + oX2, h2 / 2, -oX2, -oY2, w2 + oX2, -oY2))
+  //   .add(new go.PathSegment(go.PathSegment.Bezier, -oX2, h2 / 2, w2 + oX2, h2 + oY2, -oX2, h2 + oY2))
+  // )
+  geo = addEllipse(geo, w, h, eW, eH);
+  geo = addEllipse(geo, w, h, w, h * 3 / 2);
+  geo = geo
     .add(new go.PathFigure(-oX, h / 2, true)
       .add(new go.PathSegment(go.PathSegment.Line, -oX - h / 3, h / 3))
       .add(new go.PathSegment(go.PathSegment.Line, -oX, h / 2))
@@ -75,8 +125,12 @@ go.Shape.defineFigureGenerator("StartNodeRectangle", function (shape, w, h) {
 });
 
 const doubleStrokePattern = new go.Shape({
-  geometryString: "M0 0 L1 0 M0 5 L1 5",
+  geometryString: `M 0 0 L 1 0 
+        M 0 11 L 1 11
+  `,
   fill: "transparent",
+  stroke: "green",
+  strokeCap: "square",
 });
 
 
@@ -186,6 +240,11 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
           {
             // figure: 'RoundedRectangle',
             figure: nodeShape,
+
+            //           geometryString: `F M 0 0 L 1 0 
+            //       L 0 5 L 1 5
+            // `,
+
             name: 'SHAPE', fill: 'white', strokeWidth: 2,
             portId: '', fromLinkable: true, toLinkable: true, cursor: 'pointer',
             toLinkableSelfNode: true, fromLinkableSelfNode: true,
@@ -194,8 +253,12 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
           new go.Binding('fill', 'color'),
           // new go.Binding('fill', 'key', (key) => { return this.props.highlightedNodes.has(key) ? nodeHighlightColor : nodeColor; }),
           // new go.Binding('fill', 'key', this.checkNode),
-          new go.Binding('figure').makeTwoWay(),
-          new go.Binding('pathPattern', 'final', (final: boolean) => final ? doubleStrokePattern : null)),
+          // new go.Binding('figure').makeTwoWay(),
+          new go.Binding('figure', '', (node: any) =>
+            (node.figure ? node.figure : nodeShape)
+            + (node.final ? '_final' : '')
+          )),
+        // new go.Binding('pathPattern', 'final', (final: boolean) => final ? doubleStrokePattern : null)),
         $(go.TextBlock,
           { margin: 8, editable: true, font: '400 .875rem Roboto, sans-serif' },  // some room around the text
           new go.Binding('text').makeTwoWay()
