@@ -59,6 +59,12 @@ go.Shape.defineFigureGenerator("Ellipse_final", function (shape, w, h) {
   return geo;
 });
 
+go.Shape.defineFigureGenerator("Ellipse", function (shape, w, h) {
+  var geo = new go.Geometry();
+  geo = addEllipse(geo, w, h, w * 3 / 2, h * 2);
+  return geo;
+});
+
 
 go.Shape.defineFigureGenerator("StartNodeCircle_final", function (shape, w, h) {
   const eW = w * 3 / 2;
