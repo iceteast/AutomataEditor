@@ -434,7 +434,8 @@ function App() {
   const [showImportPopup, setShowImportPopup] = React.useState(false);
   const [exportLanguage, setExportLanguage] = React.useState('javascript');
 
-  const [admin, setAdmin] = React.useState(false);
+  // const [admin, setAdmin] = React.useState(false);
+  const [admin, setAdmin] = createPersistedState<boolean>("admin")(false);
 
   const hash = (str: string, callback: (err: Error, derivedKey: Buffer) => void) => {
     pbkdf2.pbkdf2(
@@ -826,7 +827,7 @@ function App() {
   };
 
 
-  const openInNewTab = (url:string) => {
+  const openInNewTab = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -1236,6 +1237,29 @@ function App() {
               Clear Graph
             </Button>
           </Grid>
+          <Grid item>
+            <ToggleButtonGroup
+              value={admin ? 'admin' : 'normal'}
+              exclusive
+              onChange={
+                (
+                  event: React.MouseEvent<HTMLElement>,
+                  newValue: "admin" | "normal",
+                ) => {
+                  setAdmin(newValue === "admin");
+                }
+              }
+              aria-label="text alignment"
+              size='small'
+            >
+              <ToggleButton value="normal" aria-label="left aligned">
+                Normal
+              </ToggleButton>
+              <ToggleButton value="admin" aria-label="centered">
+                Super
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Grid>
         </Grid>
       </div>
       <div style={{ "width": "100%" }}>
@@ -1333,7 +1357,7 @@ function App() {
             </Grid>
           </Grid>
         </div>
-      </Popup>
+      </Popup >
 
       <Popup open={showLoadPopup} onClose={() => { setShowLoadPopup(false); setPublicPastes(null); }} modal>
         <div style={{ "overflowY": "auto", "maxHeight": "100vh" }}>
@@ -1348,7 +1372,7 @@ function App() {
       </Popup>
 
       {/* {inspector} */}
-    </div>
+    </div >
   );
 
 }
