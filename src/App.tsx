@@ -5,6 +5,7 @@ import * as React from 'react';
 import pbkdf2 from 'pbkdf2';
 import axios from 'axios';
 
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import TextareaAutosize from '@mui/material/TextareaAutosize';
@@ -825,6 +826,11 @@ function App() {
   };
 
 
+  const openInNewTab = (url:string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+
   const coloredNodeDataArray =
     nodeDataArray.map((node) => {
       const color = selectedNodes.has(node.key) ? nodeHighlightColor : nodeColor;
@@ -1066,6 +1072,16 @@ function App() {
               onClick={exportGraph}
             >
               Export
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<FeedbackIcon />}
+              onClick={() => openInNewTab('https://github.com/NeuralCoder3/AutomataEditor/issues/new/choose')}
+            >
+              Feedback
             </Button>
           </Grid>
         </Grid>
