@@ -1,4 +1,4 @@
-export type FormatTypes = "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL" | "Grammar";
+export type FormatTypes = "JSON" | "RegEx" | "5-Tuple" | "LaTeX" | "URL" | "Grammar" | "Image" | "SVG";
 export type CloudProvider = "Google Drive" | "Dropbox" | "Unlisted Pastebin" | "Public Pastebin" | "File";
 
 // export enum ControlledAccess {

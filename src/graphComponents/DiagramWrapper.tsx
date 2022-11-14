@@ -10,6 +10,7 @@ interface DiagramProps {
   linkDataArray: Array<go.ObjectData>;
   modelData: go.ObjectData;
   skipsDiagramUpdate: boolean;
+  diagramRef: React.RefObject<ReactDiagram>;
   onDiagramEvent: (e: go.DiagramEvent) => void;
   onModelChange: (e: go.IncrementalData) => void;
   // highlightedNodes: Set<number>
@@ -146,10 +147,15 @@ export class DiagramWrapper extends React.Component<DiagramProps, {}> {
    */
   private diagramRef: React.RefObject<ReactDiagram>;
 
+  // public getDiagram(): go.Diagram | null {
+  //   return this.diagramRef.current ? this.diagramRef.current.getDiagram() : null;
+  // }
+
   /** @internal */
   constructor(props: DiagramProps) {
     super(props);
-    this.diagramRef = React.createRef();
+    // this.diagramRef = React.createRef();
+    this.diagramRef = this.props.diagramRef;
   }
 
   /**

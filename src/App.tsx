@@ -28,6 +28,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { Icon } from '@iconify/react';
+import downloadjs from 'downloadjs';
 
 // import { CopyToClipboard } from 'react-copy-to-clipboard';
 // import Copy from 'react-copy';
@@ -53,6 +54,7 @@ import createPersistedState from 'use-persisted-state';
 import Button from '@mui/material/Button';
 import { convertToGraph, updateModelWithGraph } from './GraphConversion';
 import { ChangeEvent } from 'react';
+import { ReactDiagram } from 'gojs-react';
 
 
 function App() {
@@ -437,6 +439,14 @@ function App() {
   // const [admin, setAdmin] = React.useState(false);
   const [admin, setAdmin] = createPersistedState<boolean>("admin")(false);
 
+  const coloredNodeDataArray =
+    nodeDataArray.map((node) => {
+      const color = selectedNodes.has(node.key) ? nodeHighlightColor : nodeColor;
+      return { ...node, color: color };
+    });
+
+  const diagramRef = React.useRef<ReactDiagram>(null);
+
   const hash = (str: string, callback: (err: Error, derivedKey: Buffer) => void) => {
     pbkdf2.pbkdf2(
       str,
@@ -773,7 +783,7 @@ function App() {
         new_graph = ofRegEx(importText);
         break;
       default:
-        console.log("Not handled export format");
+        console.log("Not handled import format");
         return;
     }
     if (new_graph) {
@@ -817,6 +827,33 @@ function App() {
           output = graphToGrammar(graph);
           setExportLanguage("text");
           break;
+        case 'Image':
+          const diagram = diagramRef.current?.getDiagram();
+          const filename = "automaton.png";
+          diagram?.makeImageData({
+            background: "white",
+            returnType: "blob",
+            callback: (blob) => {
+              downloadjs(blob, filename);
+            }
+          });
+          return;
+
+        // downloadjs(img, "automaton.png", "image/png");
+        // output = `<img src=${img.code}.jpg}></img>`
+        // setExportLanguage("link");
+        // break;
+        case 'SVG':
+          const diagram2 = diagramRef.current?.getDiagram();
+          const svg = diagram2?.makeSvg({
+            scale: 1,
+            background: "white",
+            padding: 10
+          });
+          const svgStr = new XMLSerializer().serializeToString(svg!);
+          const blob = new Blob([svgStr], { type: "image/svg+xml" });
+          downloadjs(blob, "automaton.svg");
+          return;
         default:
           console.log("Not handled export format");
           return;
@@ -832,11 +869,6 @@ function App() {
   };
 
 
-  const coloredNodeDataArray =
-    nodeDataArray.map((node) => {
-      const color = selectedNodes.has(node.key) ? nodeHighlightColor : nodeColor;
-      return { ...node, color: color };
-    });
 
   const [showSavePopup, setShowSavePopup] = React.useState(false);
   const [saveText, setSaveText] = React.useState('');
@@ -1088,6 +1120,7 @@ function App() {
         </Grid>
       </div>
       <DiagramWrapper
+        diagramRef={diagramRef}
         nodeDataArray={coloredNodeDataArray}
         // nodeDataArray={nodeDataArray}
         // highlightedNodes={selectedNodes}

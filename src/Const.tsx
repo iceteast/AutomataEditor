@@ -47,8 +47,20 @@ export const formats: Format[] = [
     {
         name: "Grammar",
         import: false, // TODO:
-        export: true, // TODO:
+        export: true,
         adminOnly: true,
+    },
+    {
+        name: "Image",
+        import: false,
+        export: true,
+        adminOnly: false,
+    },
+    {
+        name: "SVG",
+        import: false,
+        export: true,
+        adminOnly: false,
     },
     // TODO: dot / graphviz
 ];
