@@ -24,7 +24,7 @@ The editor should be intuitive and easy to use.
 - [x] move nodes
 - [x] add edges
 - [x] delete nodes, edges
-- [ ] save/load automata
+- [x] save/load automata
 - [x] extract simple datastructure
 - [x] zoom
 - [x] pan
@@ -39,16 +39,16 @@ The editor should be intuitive and easy to use.
 - [ ] Image
 - [ ] SVG
 - [ ] Table (for Turing)
-- [ ] RegEx
-- [ ] Grammar
+- [x] RegEx
+- [x] Grammar
 
 ### Memory
 
-- [ ] Save to perma link
-- [ ] Save to local storage
-- [ ] Save to file
-- [ ] Save to server
-- [ ] Import from all
+- [x] Save to perma link
+- [x] Save to local storage
+- [x] Save to file
+- [x] Save to server
+- [x] Import from all
 
 ### Simulation
 
@@ -57,15 +57,16 @@ The editor should be intuitive and easy to use.
 - [x] list of words (marked intended rejections) => bulk judge
 - [x] NFA simulation
 - [ ] Turing simulation
+- [ ] PDA simulation
 
 ### Special Features
 
-- [ ] Regex to automata
-- [ ] Automata to regex
+- [x] Regex to automata
+- [x] Automata to regex
 - [x] Minize automata
 - [x] NFA to DFA (power automaton)
-- [ ] Check equivalence (as import)
-- [ ] compute equivalence classes (myhill- [ ]nerode) (as export)
+- [x] Check equivalence (as import)
+- [ ] compute equivalence classes (myhill-nerode) (as export)
 - [x] Regex labels
 
 ### Bugs/Tests
