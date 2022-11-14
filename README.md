@@ -36,8 +36,8 @@ The editor should be intuitive and easy to use.
 - [x] JSON
 - [x] Text (5-Tuple)
 - [x] Url
-- [ ] Image
-- [ ] SVG
+- [x] Image
+- [x] SVG
 - [ ] Table (for Turing)
 - [x] RegEx
 - [x] Grammar
