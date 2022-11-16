@@ -6,8 +6,8 @@
 
 ### General
 
-- [ ] link old editor https://neuralcoder3.github.io/
-- [ ] redirect from https://neuralcoder3.github.io/
+- [x] link old editor https://neuralcoder3.github.io/
+- [x] redirect from https://neuralcoder3.github.io/
 
 ### Automata Editor
 
