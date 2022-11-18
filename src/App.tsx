@@ -1,14 +1,30 @@
-import * as go from 'gojs';
+// react
 import * as React from 'react';
-// import { produce } from 'immer';
-// import bcrypt from 'bcrypt';
-import pbkdf2 from 'pbkdf2';
-import axios from 'axios';
+import { ChangeEvent } from 'react';
 
+// algorithms, background
+import pbkdf2 from 'pbkdf2';
+import lzbase62 from 'lzbase62';
+import axios from 'axios';
+import createPersistedState from 'use-persisted-state';
+import downloadjs from 'downloadjs';
+
+// components
+import * as go from 'gojs';
+import { ReactDiagram } from 'gojs-react';
+import Popup from 'reactjs-popup';
+
+// visual
+import 'reactjs-popup/dist/index.css';
+import Highlight from 'react-highlight';
+import CodeBlock from 'react-copy-code';
+
+// material ui, icons
+import { Icon } from '@iconify/react';
+import Button from '@mui/material/Button';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
-import TextareaAutosize from '@mui/material/TextareaAutosize';
 import TextField from '@mui/material/TextField';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -27,125 +43,51 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import { Icon } from '@iconify/react';
-import downloadjs from 'downloadjs';
 
-// import { CopyToClipboard } from 'react-copy-to-clipboard';
-// import Copy from 'react-copy';
-import CodeBlock from 'react-copy-code';
-import Popup from 'reactjs-popup';
-import 'reactjs-popup/dist/index.css';
-import Highlight from 'react-highlight';
-
-import lzbase62 from 'lzbase62';
-// import AmauiLZ77 from '@amaui/lz77';
-
+// local files
 import { DiagramWrapper } from './graphComponents/DiagramWrapper';
-import { SelectionInspector } from './graphComponents/SelectionInspector';
-
 import './App.css';
-import { clouds, epsilon, formats, nodeColor, nodeHighlightColor, pasteeeApiToken, pasteeePublicApiToken, pasteeeTokens, pwd_hash, startNodeShape } from './Const';
+import { clouds, formats, nodeColor, nodeHighlightColor, pasteeeApiToken, pasteeePublicApiToken, pwd_hash, startNodeShape } from './Const';
 import Info from './components/Info';
-import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, makeAtomic, minimize, complementGraph, ofRegEx, removeEpsilon, reverseGraph, toLatex, toRegEx, intersectionGraph, isEquiv, differenceGraph } from './GraphUtils';
-import { Cloud, CloudProvider, ControlledAccess, Format, Graph, Node as GraphNode, Paste } from "./Interfaces";
+import { fiveTuple, getPowerGraph, getReachableGraph, graphToGrammar, makeAtomic, minimize, ofRegEx, removeEpsilon, reverseGraph, toLatex, toRegEx, intersectionGraph, isEquiv, differenceGraph } from './GraphUtils';
+import { Cloud, ControlledAccess, Format, Graph, Paste } from "./Interfaces";
 import Multi from './components/Multi';
 import Single from './components/Single';
-import createPersistedState from 'use-persisted-state';
-import Button from '@mui/material/Button';
 import { convertToGraph, updateModelWithGraph } from './GraphConversion';
-import { ChangeEvent } from 'react';
-import { ReactDiagram } from 'gojs-react';
+
+// constants
+const initNodes: go.ObjectData[] = [
+  { key: 0, text: 'Start', color: nodeColor, loc: '0 0', deletable: false, figure: startNodeShape },
+];
+const initLinks: go.ObjectData[] = [];
 
 
-function App() {
-
-  const clearCacheData = () => {
-    caches.keys().then((names) => {
-      names.forEach((name) => {
-        caches.delete(name);
-      });
+// helper functions
+const clearCacheData = () => {
+  caches.keys().then((names) => {
+    names.forEach((name) => {
+      caches.delete(name);
     });
-    localStorage.clear();
-    // reload to take effect
-    window.location.reload();
-  };
-
-  const [selectedNodes, setSelectedNodes] = React.useState<Set<number>>(new Set());
-
-  const initNodes: go.ObjectData[] = [
-    // { key: 0, text: 'Start', color: nodeColor, deletable: false, figure: startNodeShape },
-    { key: 0, text: 'Start', color: nodeColor, loc: '0 0', deletable: false, figure: startNodeShape },
-  ];
-  const initLinks: go.ObjectData[] = [];
-
-  const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(
-    initNodes
-  );
-  const [linkDataArray, setLinkDataArray] = createPersistedState<Array<go.ObjectData>>('linkArray')(
-    initLinks
-  );
-
-  const [modelData, setModelData] = createPersistedState<go.ObjectData>('modelData')(
-    { canRelink: true }
-  );
-  const [selectedData, setSelectedData] = React.useState<go.ObjectData | null>(
-    null
-  );
-  const [skipsDiagramUpdate, setSkipsDiagramUpdate] = React.useState<boolean>(
-    false
-  );
-
-  var mapNodeKeyIdx: Map<go.Key, number> = new Map<go.Key, number>();
-  var mapLinkKeyIdx: Map<go.Key, number> = new Map<go.Key, number>();
-
-  const refreshNodeIndex = (nodeArr: Array<go.ObjectData>) => {
-    mapNodeKeyIdx.clear();
-    nodeArr.forEach((n: go.ObjectData, idx: number) => {
-      mapNodeKeyIdx.set(n.key, idx);
-    });
-  }
-
-  const refreshLinkIndex = (linkArr: Array<go.ObjectData>) => {
-    mapLinkKeyIdx.clear();
-    linkArr.forEach((l: go.ObjectData, idx: number) => {
-      mapLinkKeyIdx.set(l.key, idx);
-    });
-  }
-
-  // only once?
-  // React.useEffect(() => {
-  refreshNodeIndex(nodeDataArray);
-  refreshLinkIndex(linkDataArray);
-  // }, []);
-
-  const handleDiagramEvent = (e: go.DiagramEvent) => {
-    const name = e.name;
-    switch (name) {
-      case 'ChangedSelection': {
-        const sel = e.subject.first();
-        if (sel) {
-          if (sel instanceof go.Node) {
-            const idx = mapNodeKeyIdx.get(sel.key);
-            if (idx !== undefined && idx >= 0) {
-              setSelectedData(nodeDataArray[idx]);
-            }
-          } else if (sel instanceof go.Link) {
-            const idx = mapLinkKeyIdx.get(sel.key);
-            if (idx !== undefined && idx >= 0) {
-              setSelectedData(linkDataArray[idx]);
-            }
-          }
-        } else {
-          setSelectedData(null);
-        }
-        break;
-      }
-      default: break;
-    }
-  }
+  });
+  localStorage.clear();
+  // reload to take effect
+  window.location.reload();
+};
 
 
-  const handleModelChange = (obj: go.IncrementalData) => {
+function getHandleModelChange(
+  nodeDataArray: go.ObjectData[],
+  linkDataArray: go.ObjectData[],
+  mapNodeKeyIdx: Map<go.Key, number>,
+  mapLinkKeyIdx: Map<go.Key, number>,
+  setModelData: (data: go.ObjectData) => void,
+
+  updateNodes: (nodes: go.ObjectData[]) => void,
+  updateLinks: (links: go.ObjectData[]) => void,
+
+  setSkipsDiagramUpdate: React.Dispatch<React.SetStateAction<boolean>>,
+) {
+  return (obj: go.IncrementalData) => {
     const insertedNodeKeys = obj.insertedNodeKeys;
     const modifiedNodeData = obj.modifiedNodeData;
     const removedNodeKeys = obj.removedNodeKeys;
@@ -158,17 +100,12 @@ function App() {
     const modifiedNodeMap = new Map<go.Key, go.ObjectData>();
     const modifiedLinkMap = new Map<go.Key, go.ObjectData>();
     let narr = nodeDataArray;
-    // let narr = [...nodeDataArray];
-    // let narr = nodeDataArray.slice();
     if (modifiedNodeData) {
       modifiedNodeData.forEach((nd: go.ObjectData) => {
         modifiedNodeMap.set(nd.key, nd);
         const idx = mapNodeKeyIdx.get(nd.key);
         if (idx !== undefined && idx >= 0) {
           narr[idx] = nd;
-          if (selectedData && selectedData.key === nd.key) {
-            setSelectedData(nd);
-          }
         }
       });
     }
@@ -189,21 +126,16 @@ function App() {
         }
         return true;
       });
-      setNodeDataArray(narr);
-      refreshNodeIndex(narr);
+      updateNodes(narr);
     }
 
     let larr = linkDataArray;
-    // let larr = [...linkDataArray];
     if (modifiedLinkData) {
       modifiedLinkData.forEach((ld: go.ObjectData) => {
         modifiedLinkMap.set(ld.key, ld);
         const idx = mapLinkKeyIdx.get(ld.key);
         if (idx !== undefined && idx >= 0) {
           larr[idx] = ld;
-          if (selectedData && selectedData.key === ld.key) {
-            setSelectedData(ld);
-          }
         }
       });
     }
@@ -224,8 +156,7 @@ function App() {
         }
         return true;
       });
-      setLinkDataArray(larr);
-      refreshLinkIndex(larr);
+      updateLinks(larr);
     }
     // handle model data changes, for now just replacing with the supplied object
     if (modifiedModelData) {
@@ -233,92 +164,149 @@ function App() {
     }
     setSkipsDiagramUpdate(true); // the GoJS model already knows about these updates
 
-
-    setNodeDataArray(narr);
-    refreshNodeIndex(narr);
-
-    setLinkDataArray(larr);
-    refreshLinkIndex(larr);
-
-
+    updateNodes(narr);
+    updateLinks(larr);
   }
+}
 
+function hash(
+  str: string,
+  callback: (err: Error, derivedKey: Buffer) => void
+) {
+  pbkdf2.pbkdf2(
+    str,
+    'aZN00cGoN1XgYcArVhIz',
+    10000,
+    64,
+    'sha512',
+    callback
+  );
+}
 
-  const handleInputChange = (path: string, value: string, isBlur: boolean) => {
-    const data = selectedData as go.ObjectData;  // only reached if selectedData isn't null
-    data[path] = value;
-    if (isBlur) {
-      const key = data.key;
-      if (key < 0) {  // negative keys are links
-        const idx = mapLinkKeyIdx.get(key);
-        if (idx !== undefined && idx >= 0) {
-          linkDataArray[idx] = data;
-          setSkipsDiagramUpdate(false);
-          // setSkipsDiagramUpdate(produce((_) => false));
-        }
-      } else {
-        // const idx = mapNodeKeyIdx.get(key);
-        const idx = nodeDataArray.findIndex((n: go.ObjectData) => n.key === key);
-        if (idx !== undefined && idx >= 0) {
-          nodeDataArray[idx] = data;
-          setSkipsDiagramUpdate(false);
-          // setSkipsDiagramUpdate(produce((_) => false));
-        }
+function uploadPaste(
+  filename: string, paste: string, token: string,
+  addPaste: (paste: Paste) => void,
+  popupMessage: (message: string) => void,
+) {
+  console.log("uploadPaste", filename, token);
+  axios.post('https://api.paste.ee/v1/pastes',
+    {
+      'description': filename,
+      'sections': [
+        {
+          'name': 'Automaton ' + filename,
+          'syntax': 'json',
+          'contents': paste,
+        },
+      ]
+    },
+    {
+      headers: {
+        'content-type': 'application/json',
+        'X-Auth-Token': token,
       }
-    }
+    }).then((res) => {
+      const id = res.data.id;
+      const link = res.data.link
+      addPaste({
+        id: id,
+        description: filename,
+      });
+      const urlWithId = window.location.href.replace(window.location.search, '?paste=' + id);
+      popupMessage("Uploaded with id " + id + "\n" + link + "\nAccess directly via " + urlWithId);
+    }).catch((err) => {
+      console.log("err", err);
+      popupMessage("Error uploading paste");
+    });
+}
+const readPaste = (id: string, token: string, cont: (s: string) => void, err: (err: Error) => void) => {
+  console.log("readPaste", id, token);
+  axios.get('https://api.paste.ee/v1/pastes/' + id,
+    {
+      headers: {
+        'X-Auth-Token': token,
+      }
+    }).then((res) => {
+      const paste = res.data.paste.sections[0].contents;
+      cont(paste);
+    }).catch(err);
+};
+
+const openInNewTab = (url: string) => { window.open(url, '_blank', 'noopener,noreferrer'); };
+
+
+function App() {
+  // diagram data
+  const [nodeDataArray, setNodeDataArray] = createPersistedState<Array<go.ObjectData>>('nodeArray')(initNodes);
+  const [linkDataArray, setLinkDataArray] = createPersistedState<Array<go.ObjectData>>('linkArray')(initLinks);
+  const [modelData, setModelData] = createPersistedState<go.ObjectData>('modelData')({ canRelink: true });
+  const [skipsDiagramUpdate, setSkipsDiagramUpdate] = React.useState<boolean>(false);
+  var mapNodeKeyIdx: Map<go.Key, number> = new Map<go.Key, number>();
+  var mapLinkKeyIdx: Map<go.Key, number> = new Map<go.Key, number>();
+  const diagramRef = React.useRef<ReactDiagram>(null);
+
+
+  // diagram functions
+  const refreshNodeIndex = (nodeArr: Array<go.ObjectData>) => {
+    mapNodeKeyIdx.clear();
+    nodeArr.forEach((n: go.ObjectData, idx: number) => {
+      mapNodeKeyIdx.set(n.key, idx);
+    });
   }
-
-
-  // const colorNodes = (nodes: GraphNode[]) => {
-  //   // console.log("colorNodes", nodes, color);
-  //   let changed = false;
-  //   const narr = nodeDataArray.map((nd: go.ObjectData) => {
-  //     const color = nodes.some((n: GraphNode) => n.id === nd.key) ? nodeHighlightColor : nodeColor;
-  //     if (nd.color !== color) {
-  //       changed = true;
-  //       return { ...nd, color: color };
-  //     }
-  //     return nd;
-  //   });
-  //   // for (let i = 0; i < nodes.length; i++) {
-  //   //   const idx = mapLinkKeyIdx.get(nodes[i].id);
-  //   //   if (idx !== undefined && idx >= 0) {
-  //   //     if (nodeDataArray[idx].color !== color) {
-  //   //       nodeDataArray[idx].color = color;
-  //   //       changed = true;
-  //   //     }
-  //   //   } else {
-  //   //     console.log("colorNodes: node not found", nodes[i]);
-  //   //   }
-  //   //   // let node = nodes[i];
-  //   //   // node.color = color;
-  //   //   // if(node.children){
-  //   //   //   colorNodes(node.children, color);
-  //   //   // }
-  //   // }
-  //   if (changed) {
-  //     console.log("colorNodes", nodes);
-  //     // console.log("Changed");
-  //     // console.log("old nodes array: ", nodeDataArray);
-  //     // console.log("node array: ", narr);
-  //     setNodeDataArray(narr);
-  //     setSkipsDiagramUpdate(false);
-  //   }
-  // }
-
-
-  // TODO: handleRelinkChange for insepector
-
-  let inspector;
-  if (selectedData !== null) {
-    inspector = <SelectionInspector
-      selectedData={selectedData}
-      onInputChange={handleInputChange}
-    />;
+  const refreshLinkIndex = (linkArr: Array<go.ObjectData>) => {
+    mapLinkKeyIdx.clear();
+    linkArr.forEach((l: go.ObjectData, idx: number) => {
+      mapLinkKeyIdx.set(l.key, idx);
+    });
   }
+  const handleModelChange = getHandleModelChange(
+    nodeDataArray,
+    linkDataArray,
+    mapNodeKeyIdx,
+    mapLinkKeyIdx,
+    setModelData,
+    (nodes: go.ObjectData[]) => {
+      setNodeDataArray(nodes);
+      refreshNodeIndex(nodes);
+    },
+    (links: go.ObjectData[]) => {
+      setLinkDataArray(links);
+      refreshLinkIndex(links);
+    },
+    setSkipsDiagramUpdate
+  );
 
+
+  // diagram related properties
+  const [selectedNodes, setSelectedNodes] = React.useState<Set<number>>(new Set());
+
+
+  // ui properties
   const [singleMulti, setSingleMulti] = createPersistedState<"single" | "multi">('singleMulti')('single');
+  const [selectedFunction, setSelectedFunction] = createPersistedState<"intersection" | "difference" | "equivalence" | undefined>('selectedFunction')(undefined);
+  const [formatStr, setFormatStr] = createPersistedState<string>("format")('');
+  const format = formats.find((f) => f.name === formatStr);
+  const [cloudStr, setCloudStr] = createPersistedState<string>("cloud")('');
+  const cloud = clouds.find((c) => c.name === cloudStr);
+  const [copyText, setCopyText] = React.useState('');
+  const [showCopyPopup, setShowCopyPopup] = React.useState(false);
+  const [importText, setImportText] = React.useState('');
+  const [showImportPopup, setShowImportPopup] = React.useState(false);
+  const [exportLanguage, setExportLanguage] = React.useState('javascript');
+  const [adminOverride, setAdminOverride] = createPersistedState<boolean>("adminOverride")(false);
+  const [adminViaPwd, setAdminViaPwd] = React.useState(false);
+  const admin = adminViaPwd || adminOverride;
+  const [ownPastes, setOwnPastes] = createPersistedState<Paste[]>("ownPastes")([]);
+  const [showLoadPopup, setShowLoadPopup] = React.useState(false);
+  const [showSelectPopup, setShowSelectPopup] = React.useState(false);
+  const [loadText, setLoadText] = React.useState('');
+  const [publicPastes, setPublicPastes] = React.useState<null | any[]>(null);
+  const [showSavePopup, setShowSavePopup] = React.useState(false);
+  const [saveText, setSaveText] = React.useState('');
+  const [selectText, setSelectText] = createPersistedState<string>('selectText')('');
 
+
+  // ui functions
   const handleSingleMultiChange = (
     event: React.MouseEvent<HTMLElement>,
     newValue: "single" | "multi",
@@ -326,153 +314,44 @@ function App() {
     if (newValue && newValue !== singleMulti)
       setSingleMulti(newValue);
   };
-
-  var graph = convertToGraph(nodeDataArray, linkDataArray);
-
-
-  const cutUnreachableNodes = () => {
-    if (!admin) {
-      return;
-    }
-    const newGraph = getReachableGraph(graph);
-    updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
-  };
-
-  const powerAutomaton = () => {
-    if (!admin) {
-      return;
-    }
-    const newGraph = getPowerGraph(graph);
-    updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
-  };
-
-  const automicAutomaton = () => {
-    if (!admin) {
-      return;
-    }
-    const newGraph = makeAtomic(graph);
-    if (newGraph) {
-      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
-    }
-  }
-
-  const removeEpsilonAutomaton = () => {
-    const newGraph = removeEpsilon(graph);
-    if (newGraph) {
-      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
-    }
-  }
-
-  const minimizeAutomaton = () => {
-    if (!admin) {
-      return;
-    }
-    const newGraph = minimize(graph);
-    if (newGraph) {
-      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
-    }
-  }
-
-  const reverseAutomaton = () => {
-    if (!admin) {
-      return;
-    }
-    const newGraph = reverseGraph(graph);
-    if (newGraph) {
-      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
-    }
-  };
-
-  const [selectedFunction, setSelectedFunction] = createPersistedState<"intersection" | "difference" | "equivalence" | undefined>('selectedFunction')(undefined);
-
-  const intersection = () => {
-    // const newGraph = complementGraph(graph);
-    // updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
-    setSelectedFunction("intersection");
+  const selectFunction = (func: "intersection" | "difference" | "equivalence") => {
+    setSelectedFunction(func);
     setShowSelectPopup(true);
   };
-  const checkEquivalence = () => {
-    setSelectedFunction("equivalence");
-    setShowSelectPopup(true);
+  const addOwnPaste = (paste: Paste) => {
+    setOwnPastes((prev) => [...prev, paste]);
   };
-  const difference = () => {
-    setSelectedFunction("difference");
-    setShowSelectPopup(true);
+  const showPasteError = (err: Error) => {
+    console.log("err", err);
+    popupMessage("Error reading paste");
+  };
+  const popupMessage = (message: string) => {
+    setExportLanguage("text")
+    setCopyText(message);
+    setShowCopyPopup(true);
   };
 
-  // React.useEffect(() => {
-  //   updateModelWithGraph(
-  //     {
-  //       nodes: [
-  //         { id: 0, label: "Start", isAccepting: false },
-  //         { id: 1, label: "A", isAccepting: true },
-  //       ],
-  //       links: [
-  //         { from: 0, to: 1, label: "a" },
-  //         { from: 1, to: 1, label: "b" },
-  //       ],
-  //     },
-  //     setNodeDataArray,
-  //     setLinkDataArray
-  //   );
-  // }, []);
 
-  // const [formatStr, setFormatStr] = React.useState('');
-  const [formatStr, setFormatStr] = createPersistedState<string>("format")('');
-  const handleFormatChange = (event: SelectChangeEvent) => {
-    setFormatStr(event.target.value as string);
-  };
-  const format = formats.find((f) => f.name === formatStr);
-
-  const [cloudStr, setCloudStr] = createPersistedState<string>("cloud")('');
-  const handleCloudChange = (event: SelectChangeEvent) => {
-    setCloudStr(event.target.value as string);
-  };
-  const cloud = clouds.find((c) => c.name === cloudStr);
-
-  const [copyText, setCopyText] = React.useState('');
-  const [showCopyPopup, setShowCopyPopup] = React.useState(false);
-  const [importText, setImportText] = React.useState('');
-  const [showImportPopup, setShowImportPopup] = React.useState(false);
-  const [exportLanguage, setExportLanguage] = React.useState('javascript');
-
-  // const [admin, setAdmin] = React.useState(false);
-  const [adminOverride, setAdminOverride] = createPersistedState<boolean>("adminOverride")(false);
-  const [adminViaPwd, setAdminViaPwd] = React.useState(false);
-  const admin = adminViaPwd || adminOverride;
-
+  // logic properties
+  const graph = convertToGraph(nodeDataArray, linkDataArray);
   const coloredNodeDataArray =
     nodeDataArray.map((node) => {
       const color = selectedNodes.has(node.key) ? nodeHighlightColor : nodeColor;
       return { ...node, color: color };
     });
 
-  const diagramRef = React.useRef<ReactDiagram>(null);
 
-  const hash = (str: string, callback: (err: Error, derivedKey: Buffer) => void) => {
-    pbkdf2.pbkdf2(
-      str,
-      'aZN00cGoN1XgYcArVhIz',
-      10000,
-      64,
-      'sha512',
-      callback
-      // (err: any, derivedKey: any) => {
-      //   if (err) {
-      //     setStatusText(err);
-      //     setLoading(false);
-      //     return;
-      //   }
-      //   const hash = derivedKey.toString('hex');
-      //   console.log("hash", hash);
-      //   // setStatusText('Hash generated!');
-      //   handleHash(hash);
-      //   setLoading(false);
-      // }
-    );
+  // logic functions
+  const graphTransformer = (
+    transformer: (graph: Graph) => Graph,
+    adminOnly: boolean = false
+  ) => {
+    if (adminOnly && !admin) return;
+    const newGraph = transformer(graph);
+    if (newGraph) {
+      updateModelWithGraph(newGraph, setNodeDataArray, setLinkDataArray);
+    }
   };
-
-
   const graphFromStr = (str: string) => {
     const graph = JSON.parse(str) as Graph;
     if (graph) {
@@ -481,7 +360,6 @@ function App() {
     }
     return false;
   };
-
   const importFromUrl = (searchParams: string) => {
     const queryParams = new URLSearchParams(searchParams);
     const enc = queryParams.get('graph');
@@ -490,74 +368,136 @@ function App() {
       graphFromStr(json);
     }
   };
+  const clearGraph = () =>
+    graphTransformer((_) => { return { nodes: [{ id: 0, label: "Start", isAccepting: false }], links: [] } });
 
 
+  // updating steps
+  refreshNodeIndex(nodeDataArray);
+  refreshLinkIndex(linkDataArray);
   React.useEffect(() => {
+    // handle url params
     importFromUrl(window.location.search);
+
+    const queryParams = new URLSearchParams(window.location.search);
+    const pwd = queryParams.get('pwd');
+    const paste = queryParams.get('paste');
+    const toHash = queryParams.get('hash');
+    if (toHash) {
+      hash(
+        toHash,
+        (err: Error, derivedKey: Buffer) => {
+          if (err) return;
+          const hash = derivedKey.toString('hex');
+          console.log("hash", hash);
+        }
+      );
+    }
+
+    if (pwd) {
+      hash(
+        pwd,
+        (err: Error, derivedKey: Buffer) => {
+          if (err) return;
+          const hash = derivedKey.toString('hex');
+          if (hash === pwd_hash)
+            setAdminViaPwd(true);
+        }
+      );
+    }
+
+    if (paste) {
+      readPasteId(paste);
+    }
   }, []);
 
-  const [ownPastes, setOwnPastes] = createPersistedState<Paste[]>("ownPastes")([]);
-
-  const uploadPaste = (filename: string, paste: string, token: string) => {
-    console.log("uploadPaste", filename, token);
-    axios.post('https://api.paste.ee/v1/pastes',
-      {
-        'description': filename,
-        'sections': [
-          {
-            'name': 'Automaton ' + filename,
-            'syntax': 'json',
-            'contents': paste,
-          },
-        ]
-      },
-      {
-        headers: {
-          'content-type': 'application/json',
-          'X-Auth-Token': token,
-        }
-      }).then((res) => {
-        // console.log("res", res);
-        const id = res.data.id;
-        const link = res.data.link
-        setOwnPastes((prev) => [...prev,
-        {
-          id: id,
-          description: filename,
-        }]);
-        const urlWithId = window.location.href.replace(window.location.search, '?paste=' + id);
-        popupMessage("Uploaded with id " + id + "\n" + link + "\nAccess directly via " + urlWithId);
-      }).catch((err) => {
-        console.log("err", err);
-        popupMessage("Error uploading paste");
-      });
-  };
-
-  const showPasteError = (err: Error) => {
-    console.log("err", err);
-    popupMessage("Error reading paste");
-  };
 
 
-  const readPaste = (id: string, token: string, cont: (s: string) => void, err = showPasteError) => {
-    console.log("readPaste", id, token);
-    axios.get('https://api.paste.ee/v1/pastes/' + id,
-      {
-        headers: {
-          'X-Auth-Token': token,
-        }
-      }).then((res) => {
-        // console.log("res", res);
-        // const paste = res.data.sections[0].contents;
-        const paste = res.data.paste.sections[0].contents;
-        // graphFromStr(paste);
-        cont(paste);
-      }).catch(err);
-  };
+  const buttons = [
+    {
+      admin: true,
+      icon: <ContentCutIcon />,
+      click: () => graphTransformer(getReachableGraph, true),
+      text: "Cut unreachable"
+    },
+    {
+      admin: true,
+      icon: <BoltIcon />,
+      click: () => graphTransformer(getPowerGraph, true),
+      text: "Power Automaton"
+    },
+    {
+      admin: true,
+      icon: <CloseFullscreenIcon />,
+      click: () => graphTransformer(minimize, true),
+      text: "Minimize"
+    },
+    {
+      admin: true,
+      icon: <SettingsBackupRestoreIcon />,
+      click: () => graphTransformer(reverseGraph, true),
+      text: "Reverse"
+    },
+    {
+      admin: true,
+      icon: null,
+      click: () => selectFunction("intersection"),
+      text: "Intersection"
+    },
+    {
+      admin: true,
+      icon: null,
+      click: () => selectFunction("difference"),
+      text: "Difference"
+    },
+    {
+      admin: true,
+      icon: null,
+      click: () => selectFunction("equivalence"),
+      text: "Equivalence"
+    },
+    {
+      admin: true,
+      icon: null,
+      click: () => graphTransformer(makeAtomic, true),
+      text: "Make atomic"
+    },
+    {
+      admin: false,
+      icon: <DeleteOutlineIcon />,
+      click: clearCacheData,
+      text: "Clear cache"
+    },
+    {
+      admin: false,
+      icon: <DeleteOutlineIcon />,
+      click: clearGraph,
+      text: "Clear graph"
+    },
+  ];
 
-  const [showLoadPopup, setShowLoadPopup] = React.useState(false);
-  const [showSelectPopup, setShowSelectPopup] = React.useState(false);
-  // const [loadContent, setLoadContent] = React.useState(<></>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // TODO: move methods to own files (also the ones above)
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     setShowLoadPopup(false);
@@ -565,22 +505,17 @@ function App() {
       return;
     }
     const file = e.target.files[0];
-    // const { name } = file;
-
     const reader = new FileReader();
     reader.onload = (evt) => {
       if (!evt?.target?.result) {
         return;
       }
       const { result } = evt.target;
-      // console.log("result", result);
       graphFromStr(result as string);
     };
-    // reader.readAsBinaryString(file);
     reader.readAsText(file, 'utf-8');
   };
 
-  const [loadText, setLoadText] = React.useState('');
 
   const loadGraphFromPasteID = (id: string, token: string) => {
     setPublicPastes(null);
@@ -589,7 +524,7 @@ function App() {
       const success = graphFromStr(paste);
       if (!success)
         popupMessage("Error loading paste");
-    });
+    }, showPasteError);
   };
 
   const listPastes = async (token: string) => {
@@ -600,9 +535,7 @@ function App() {
           'X-Auth-Token': token,
         }
       });
-    // console.log("res", res);
     const pastes = res.data.data;
-    // console.log("pastes", pastes);
     return pastes;
   };
 
@@ -628,15 +561,12 @@ function App() {
   const loadPublicPastes = () => {
     if (publicPastes === null) {
       setPublicPastes([]);
-      // console.log("Loading public pastes");
       listPastes(pasteeePublicApiToken).then((pastes) => {
-        // console.log("pastes", pastes);
         setPublicPastes(pastes);
       });
     }
   };
 
-  const [publicPastes, setPublicPastes] = React.useState<null | any[]>(null);
 
   const canAccess = (access: ControlledAccess | undefined) => {
     if (!access)
@@ -717,15 +647,8 @@ function App() {
     return <> </>
   };
 
-  const popupMessage = (message: string) => {
-    setExportLanguage("text")
-    setCopyText(message);
-    setShowCopyPopup(true);
-  };
 
-  // React.useEffect(() => {
-  //   readPaste("eYgWG", pasteeeApiToken, (s) => console.log(s));
-  // }, []);
+
 
   const saveGraph = () => {
     if (!canAccess(cloud?.save)) {
@@ -746,10 +669,10 @@ function App() {
       case 'Dropbox':
         break;
       case 'Unlisted Pastebin':
-        uploadPaste(saveText, graphStr, pasteeeApiToken);
+        uploadPaste(saveText, graphStr, pasteeeApiToken, addOwnPaste, popupMessage);
         break;
       case 'Public Pastebin':
-        uploadPaste(saveText, graphStr, pasteeePublicApiToken);
+        uploadPaste(saveText, graphStr, pasteeePublicApiToken, addOwnPaste, popupMessage);
         break;
       default:
         return;
@@ -772,14 +695,7 @@ function App() {
         new_graph = JSON.parse(importText) as Graph;
         break;
       case 'URL':
-        // const enc = importText.split('?graph=')[1];
         new_graph = importFromUrl("?" + importText.split('?')[1]);
-        // const queryParams = new URLSearchParams("?" + importText.split('?')[1]);
-        // const enc = queryParams.get('graph');
-        // if (enc) {
-        //   const json = lzbase62.decompress(enc);
-        //   new_graph = JSON.parse(json) as Graph;
-        // }
         break;
       case 'RegEx':
         new_graph = ofRegEx(importText);
@@ -791,7 +707,6 @@ function App() {
     if (new_graph) {
       updateModelWithGraph(new_graph, setNodeDataArray, setLinkDataArray);
     }
-    // setShowImportPopup(true);
   };
 
   const exportGraph = () => {
@@ -809,9 +724,6 @@ function App() {
           const enc = lzbase62.compress(json);
           output = window.location.origin + window.location.pathname + "?graph=" + enc;
           setExportLanguage("html");
-          // const enc = new AmauiLZ77(json).encode().value;
-          // console.log(enc);
-          // const b64 = compress(json, { level: 9 });
           break;
         case 'LaTeX':
           output = toLatex(graph);
@@ -840,11 +752,6 @@ function App() {
             }
           });
           return;
-
-        // downloadjs(img, "automaton.png", "image/png");
-        // output = `<img src=${img.code}.jpg}></img>`
-        // setExportLanguage("link");
-        // break;
         case 'SVG':
           const diagram2 = diagramRef.current?.getDiagram();
           const svg = diagram2?.makeSvg({
@@ -866,14 +773,9 @@ function App() {
   };
 
 
-  const openInNewTab = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
 
 
 
-  const [showSavePopup, setShowSavePopup] = React.useState(false);
-  const [saveText, setSaveText] = React.useState('');
 
   const readPasteId = (pasteId: string) => {
     readPaste(pasteId, pasteeeApiToken, (paste) => {
@@ -889,44 +791,10 @@ function App() {
     });
   };
 
-  React.useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const pwd = queryParams.get('pwd');
-    const paste = queryParams.get('paste');
-    const toHash = queryParams.get('hash');
-    if (toHash) {
-      hash(
-        toHash,
-        (err: Error, derivedKey: Buffer) => {
-          if (err) return;
-          const hash = derivedKey.toString('hex');
-          console.log("hash", hash);
-        }
-      );
-    }
-
-    if (pwd) {
-      hash(
-        pwd,
-        (err: Error, derivedKey: Buffer) => {
-          if (err) return;
-          const hash = derivedKey.toString('hex');
-          if (hash === pwd_hash)
-            setAdminViaPwd(true);
-        }
-      );
-    }
-
-    if (paste) {
-      readPasteId(paste);
-    }
-  }, []);
 
 
 
   const handleSelectedFunction = (pasteId: string, token: string) => {
-    // switch(selectedFunction) {
-    // case 'intersection':
     setPublicPastes(null);
     setShowSelectPopup(false);
     readPaste(pasteId, token, (paste) => {
@@ -957,11 +825,10 @@ function App() {
           popupMessage(isEquivalent ? "Both graphs are equivalent" : "The graphs are not equivalent");
           break;
       }
-    });
+    }, showPasteError);
 
   };
 
-  const [selectText, setSelectText] = createPersistedState<string>('selectText')('');
 
   const renderSelectPopup = () => {
     loadPublicPastes();
@@ -1001,15 +868,6 @@ function App() {
     </Grid>);
   };
 
-  const clearGraph = () => {
-    const new_graph = {
-      nodes: [
-        { id: 0, label: "Start", isAccepting: false },
-      ],
-      links: [],
-    };
-    updateModelWithGraph(new_graph, setNodeDataArray, setLinkDataArray);
-  };
 
   return (
     <div className='app'>
@@ -1026,11 +884,10 @@ function App() {
                 id="cloud-select"
                 value={cloudStr}
                 label="Cloud"
-                onChange={handleCloudChange}
+                onChange={(event) => setCloudStr(event.target.value as string)}
               >
                 {
                   clouds.filter(
-                    // (c) => admin || !c.adminOnly
                     (c) => canAccess(c.load) || canAccess(c.save)
                   ).map((cloud: Cloud) => {
                     return <MenuItem value={cloud.name}>{cloud.name}</MenuItem>
@@ -1057,7 +914,6 @@ function App() {
               color="primary"
               startIcon={<FileOpenIcon />}
               disabled={!canAccess(cloud?.load)}
-              // onClick={openLoadPopup}
               onClick={() => setShowLoadPopup(true)}
             >
               Load
@@ -1073,11 +929,8 @@ function App() {
                 id="format-select"
                 value={formatStr}
                 label="Format"
-                onChange={handleFormatChange}
+                onChange={(event) => setFormatStr(event.target.value as string)}
               >
-                {/* <MenuItem value={10}>Ten</MenuItem>
-                <MenuItem value={20}>Twenty</MenuItem>
-                <MenuItem value={30}>Thirty</MenuItem> */}
                 {
                   formats.filter(
                     (f) => admin || !f.adminOnly
@@ -1126,12 +979,10 @@ function App() {
       <DiagramWrapper
         diagramRef={diagramRef}
         nodeDataArray={coloredNodeDataArray}
-        // nodeDataArray={nodeDataArray}
-        // highlightedNodes={selectedNodes}
         linkDataArray={linkDataArray}
         modelData={modelData}
         skipsDiagramUpdate={skipsDiagramUpdate}
-        onDiagramEvent={handleDiagramEvent}
+        onDiagramEvent={() => { }}
         onModelChange={handleModelChange}
       />
       <Info />
@@ -1153,150 +1004,23 @@ function App() {
               </ToggleButton>
             </ToggleButtonGroup>
           </Grid>
-          {admin &&
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<ContentCutIcon />}
-                onClick={cutUnreachableNodes}
-              >
-                Cut unreachable
-              </Button>
-            </Grid>
-          }
-          {admin &&
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<BoltIcon />}
-                onClick={powerAutomaton}
-              >
-                Power Automaton
-              </Button>
-            </Grid>
-          }
-          {admin &&
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<CloseFullscreenIcon />}
-                onClick={minimizeAutomaton}
-              >
-                Minimize
-              </Button>
-            </Grid>
-          }
-          {admin &&
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<SettingsBackupRestoreIcon />}
-                onClick={reverseAutomaton}
-              >
-                Reverse
-              </Button>
-            </Grid>
-          }
-          {admin &&
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={intersection}
-              >
-                Intersection
-              </Button>
-            </Grid>
-          }
-          {admin &&
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={difference}
-              >
-                Difference
-              </Button>
-            </Grid>
-          }
-          {admin &&
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={checkEquivalence}
-              >
-                Equivalence
-              </Button>
-            </Grid>
-          }
-          {admin &&
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={automicAutomaton}
-              >
-                Make atomic
-              </Button>
-            </Grid>
-          }
-          {/* <Grid item>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={removeEpsilonAutomaton}
-            >
-              Remove Epsilon
-            </Button>
-          </Grid> */}
-          <Grid item>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<DeleteOutlineIcon />}
-              onClick={clearCacheData}
-            >
-              Clear Cache
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<DeleteOutlineIcon />}
-              onClick={clearGraph}
-            >
-              Clear Graph
-            </Button>
-          </Grid>
-          {/* <Grid item>
-            <ToggleButtonGroup
-              value={admin ? 'admin' : 'normal'}
-              exclusive
-              onChange={
-                (
-                  event: React.MouseEvent<HTMLElement>,
-                  newValue: "admin" | "normal",
-                ) => {
-                  setAdminOverride(newValue === "admin");
-                }
+          {
+            buttons.map(
+              (button) => {
+                return button.admin &&
+                  <Grid item>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={button.icon}
+                      onClick={button.click}
+                    >
+                      {button.text}
+                    </Button>
+                  </Grid>
               }
-              aria-label="text alignment"
-              size='small'
-            >
-              <ToggleButton value="normal" aria-label="left aligned">
-                Normal
-              </ToggleButton>
-              <ToggleButton value="admin" aria-label="centered">
-                Super
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Grid> */}
+            )
+          }
         </Grid>
       </div>
       <div style={{ "width": "100%" }}>
@@ -1304,12 +1028,10 @@ function App() {
       </div>
 
 
-      {/* <Popup trigger={<button> Trigger</button>} modal> */}
       <Popup open={showCopyPopup} onClose={() => setShowCopyPopup(false)} modal>
         <div style={{ "overflowY": "auto", "maxHeight": "100vh" }}>
           <CodeBlock highlight={true} >
             <pre>
-              {/* <Highlight className="language-javascript"> */}
               <Highlight className={"language-" + exportLanguage}>
                 {copyText}
               </Highlight>
@@ -1347,7 +1069,6 @@ function App() {
                 fullWidth
                 multiline
                 rows={6}
-                // style={{ width: "100%" }}
                 value={importText}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => setImportText(event.target.value)}
                 variant="outlined"
@@ -1408,7 +1129,6 @@ function App() {
         </div>
       </Popup>
 
-      {/* {inspector} */}
     </div >
   );
 
