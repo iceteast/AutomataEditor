@@ -73,6 +73,7 @@ The editor should be intuitive and easy to use.
 
 - [ ] Check for power automaton (epsilons)
 - [ ] Check for regex labels
+- [ ] Minimize `((01(0|1)*)|((0|1)*01))` automaton => wrong 
 
 ### Preview
 

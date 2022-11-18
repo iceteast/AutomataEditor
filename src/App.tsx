@@ -437,7 +437,9 @@ function App() {
   const [exportLanguage, setExportLanguage] = React.useState('javascript');
 
   // const [admin, setAdmin] = React.useState(false);
-  const [admin, setAdmin] = createPersistedState<boolean>("admin")(false);
+  const [adminOverride, setAdminOverride] = createPersistedState<boolean>("adminOverride")(false);
+  const [adminViaPwd, setAdminViaPwd] = React.useState(false);
+  const admin = adminViaPwd || adminOverride;
 
   const coloredNodeDataArray =
     nodeDataArray.map((node) => {
@@ -910,7 +912,7 @@ function App() {
           if (err) return;
           const hash = derivedKey.toString('hex');
           if (hash === pwd_hash)
-            setAdmin(true);
+            setAdminViaPwd(true);
         }
       );
     }
@@ -919,6 +921,8 @@ function App() {
       readPasteId(paste);
     }
   }, []);
+
+
 
   const handleSelectedFunction = (pasteId: string, token: string) => {
     // switch(selectedFunction) {
@@ -1270,7 +1274,7 @@ function App() {
               Clear Graph
             </Button>
           </Grid>
-          <Grid item>
+          {/* <Grid item>
             <ToggleButtonGroup
               value={admin ? 'admin' : 'normal'}
               exclusive
@@ -1279,7 +1283,7 @@ function App() {
                   event: React.MouseEvent<HTMLElement>,
                   newValue: "admin" | "normal",
                 ) => {
-                  setAdmin(newValue === "admin");
+                  setAdminOverride(newValue === "admin");
                 }
               }
               aria-label="text alignment"
@@ -1292,7 +1296,7 @@ function App() {
                 Super
               </ToggleButton>
             </ToggleButtonGroup>
-          </Grid>
+          </Grid> */}
         </Grid>
       </div>
       <div style={{ "width": "100%" }}>
