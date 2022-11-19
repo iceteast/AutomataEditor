@@ -19,7 +19,7 @@ The editor should be intuitive and easy to use.
 - [x] named labels
 - [x] custom nodes
 - [x] mark nodes as final (double border)
-  - [ ] good looking double outline
+  - [x] good looking double outline
 - [x] select nodes, edges
 - [x] move nodes
 - [x] add edges
@@ -74,6 +74,8 @@ The editor should be intuitive and easy to use.
 - [ ] Check for power automaton (epsilons)
 - [ ] Check for regex labels
 - [ ] Minimize `((01(0|1)*)|((0|1)*01))` automaton => wrong 
+- [ ] refactor
+- [ ] modularize
 
 ### Preview
 
