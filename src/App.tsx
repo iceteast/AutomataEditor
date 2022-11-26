@@ -1007,7 +1007,7 @@ function App() {
           {
             buttons.map(
               (button) => {
-                return button.admin &&
+                return (button.admin && !admin) ? null : (
                   <Grid item>
                     <Button
                       variant="contained"
@@ -1018,9 +1018,33 @@ function App() {
                       {button.text}
                     </Button>
                   </Grid>
+                )
               }
             )
           }
+          <Grid item>
+            <ToggleButtonGroup
+              value={admin ? 'admin' : 'normal'}
+              exclusive
+              onChange={
+                (
+                  event: React.MouseEvent<HTMLElement>,
+                  newValue: "admin" | "normal",
+                ) => {
+                  setAdminOverride(newValue === "admin");
+                }
+              }
+              aria-label="text alignment"
+              size='small'
+            >
+              <ToggleButton value="normal" aria-label="left aligned">
+                Normal
+              </ToggleButton>
+              <ToggleButton value="admin" aria-label="centered">
+                Super
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Grid>
         </Grid>
       </div>
       <div style={{ "width": "100%" }}>

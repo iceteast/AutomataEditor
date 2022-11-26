@@ -88,3 +88,10 @@ To install the packages, you might need to use `npm i --legacy-peer-deps`.
 
 The theory is abstracted in `src/GraphUtils.tsx` and `src/interfaces.tsx`.
 
+## Related Projects
+
+- [DFA Simulator](https://galhorowitz.github.io/DFASim/)
+- [GoJS](https://gojs.net/latest/index.html)
+- [Draw.io](https://app.diagrams.net/)
+- [Graphviz](https://graphviz.org/)
+- TODO: other tested graph tools
