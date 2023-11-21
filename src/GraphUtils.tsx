@@ -239,7 +239,7 @@ export function toLatex(graph: Graph) {
 \\usetikzlibrary {positioning}
 \\begin {document}
 \\begin {center}
-\\begin {tikzpicture}[>=stealth',shorten >=1pt,auto,node distance=5 cm, scale = 1, transform shape, initial text={}]
+\\begin {tikzpicture}[->, >=stealth',shorten >=1pt,auto,node distance=5 cm, scale = 1, transform shape, initial text={}]
 `;
     // [-latex ,auto ,node distance =4 cm and 5cm ,on grid, semithick]
     str +=
@@ -255,7 +255,7 @@ export function toLatex(graph: Graph) {
         // link.from + " -> " + link.to + " [label=\"" + link.label + "\"]"
         {
             const label = link.label ? `node {${quoteLabel(isEpsilon(link.label) ? "$\\varepsilon$" : link.label)}}` : "";
-            return `\\path (${link.from}) edge [${link.to === link.from ? "loop" : ""}] ${label} (${link.to});`;
+            return `\\path (${link.from}) edge [${link.to === link.from ? "loop below" : ""}] ${label} (${link.to});`;
         }
         ).join("\n");
     str += "\n";
